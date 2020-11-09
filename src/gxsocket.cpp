@@ -1394,7 +1394,7 @@ void gxSocket::GetClientInfo(char *client_name, int &r_port)
 {
   int rv = GetRemoteHostName(client_name);
   if(rv < 0) {
-    char *unc = (char *)"UNKNOWN";
+    const char *unc = "UNKNOWN";
     memset(client_name, 0,  gxsMAX_NAME_LEN);
     strncpy(client_name, unc, (gxsMAX_NAME_LEN-1));
   }

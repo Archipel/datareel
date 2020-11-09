@@ -499,7 +499,7 @@ int gxConfig::ChangeConfigLine(const gxString &string_to_replace,
   // If any strings were replaced in the file, rewrite the file
   // ----------------------------------------------------------- 
   if(num_processed > 0) {
-    char *EndOfLineSequence;
+    const char *EndOfLineSequence;
     
     DiskFileB outfile(FileName.c_str(), DiskFileB::df_READWRITE, 
 		    DiskFileB::df_CREATE);

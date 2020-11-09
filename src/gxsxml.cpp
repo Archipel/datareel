@@ -992,7 +992,7 @@ int gxsXML::load_file(const char *fname)
       looking_for_end_tag = 1;
       curr_offset++;
 
-      if(curr_offset > (line_chunk.length()-1)) {
+      if(curr_offset > 0 && size_t(curr_offset) > (line_chunk.length()-1)) {
 	line_chunk.DeleteAt(0, start_tag);
 	looking_for_start_tag = 1;
 	break;

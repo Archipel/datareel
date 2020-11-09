@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\asprint.cpp" />
+    <ClCompile Include="..\src\bstreei.cpp" />
+    <ClCompile Include="..\src\btcache.cpp" />
+    <ClCompile Include="..\src\btnode.cpp" />
+    <ClCompile Include="..\src\btstack.cpp" />
+    <ClCompile Include="..\src\cdate.cpp" />
+    <ClCompile Include="..\src\dbasekey.cpp" />
+    <ClCompile Include="..\src\dbfcache.cpp" />
+    <ClCompile Include="..\src\dbugmgr.cpp" />
+    <ClCompile Include="..\src\devcache.cpp" />
+    <ClCompile Include="..\src\dfileb.cpp" />
+    <ClCompile Include="..\src\eds101.cpp" />
+    <ClCompile Include="..\src\eds201.cpp" />
+    <ClCompile Include="..\src\edscfg.cpp" />
+    <ClCompile Include="..\src\ehandler.cpp" />
+    <ClCompile Include="..\src\fstring.cpp" />
+    <ClCompile Include="..\src\futils.cpp" />
+    <ClCompile Include="..\src\gpersist.cpp" />
+    <ClCompile Include="..\src\gthreadt.cpp" />
+    <ClCompile Include="..\src\gxbtree.cpp" />
+    <ClCompile Include="..\src\gxcond.cpp" />
+    <ClCompile Include="..\src\gxconfig.cpp" />
+    <ClCompile Include="..\src\gxcrc32.cpp" />
+    <ClCompile Include="..\src\gxdatagm.cpp" />
+    <ClCompile Include="..\src\gxdbase.cpp" />
+    <ClCompile Include="..\src\gxderror.cpp" />
+    <ClCompile Include="..\src\gxdfp64.cpp" />
+    <ClCompile Include="..\src\gxdfptr.cpp" />
+    <ClCompile Include="..\src\gxdlcode.cpp" />
+    <ClCompile Include="..\src\gxdstats.cpp" />
+    <ClCompile Include="..\src\gxfloat.cpp" />
+    <ClCompile Include="..\src\gxint16.cpp" />
+    <ClCompile Include="..\src\gxint32.cpp" />
+    <ClCompile Include="..\src\gxint64.cpp" />
+    <ClCompile Include="..\src\gxip32.cpp" />
+    <ClCompile Include="..\src\gxlistb.cpp" />
+    <ClCompile Include="..\src\gxmac48.cpp" />
+    <ClCompile Include="..\src\gxmutex.cpp" />
+    <ClCompile Include="..\src\gxrdbdef.cpp" />
+    <ClCompile Include="..\src\gxrdbhdr.cpp" />
+    <ClCompile Include="..\src\gxrdbms.cpp" />
+    <ClCompile Include="..\src\gxrdbsql.cpp" />
+    <ClCompile Include="..\src\gxscomm.cpp" />
+    <ClCompile Include="..\src\gxsema.cpp" />
+    <ClCompile Include="..\src\gxsftp.cpp" />
+    <ClCompile Include="..\src\gxshtml.cpp" />
+    <ClCompile Include="..\src\gxshttp.cpp" />
+    <ClCompile Include="..\src\gxshttpc.cpp" />
+    <ClCompile Include="..\src\gxsmtp.cpp" />
+    <ClCompile Include="..\src\gxsocket.cpp" />
+    <ClCompile Include="..\src\gxsping.cpp" />
+    <ClCompile Include="..\src\gxspop3.cpp" />
+    <ClCompile Include="..\src\gxsrss.cpp" />
+    <ClCompile Include="..\src\gxssl.cpp" />
+    <ClCompile Include="..\src\gxstream.cpp" />
+    <ClCompile Include="..\src\gxsurl.cpp" />
+    <ClCompile Include="..\src\gxsutils.cpp" />
+    <ClCompile Include="..\src\gxsxml.cpp" />
+    <ClCompile Include="..\src\gxs_b64.cpp" />
+    <ClCompile Include="..\src\gxtelnet.cpp" />
+    <ClCompile Include="..\src\gxthread.cpp" />
+    <ClCompile Include="..\src\gxuint16.cpp" />
+    <ClCompile Include="..\src\gxuint32.cpp" />
+    <ClCompile Include="..\src\gxuint64.cpp" />
+    <ClCompile Include="..\src\htmldrv.cpp" />
+    <ClCompile Include="..\src\httpgrab.cpp" />
+    <ClCompile Include="..\src\leaktest.cpp" />
+    <ClCompile Include="..\src\logfile.cpp" />
+    <ClCompile Include="..\src\memblock.cpp" />
+    <ClCompile Include="..\src\membuf.cpp" />
+    <ClCompile Include="..\src\ostrbase.cpp" />
+    <ClCompile Include="..\src\pod.cpp" />
+    <ClCompile Include="..\src\pscript.cpp" />
+    <ClCompile Include="..\src\scomserv.cpp" />
+    <ClCompile Include="..\src\sreg101.cpp" />
+    <ClCompile Include="..\src\stdafx.cpp" />
+    <ClCompile Include="..\src\strutil.cpp" />
+    <ClCompile Include="..\src\systime.cpp" />
+    <ClCompile Include="..\src\terminal.cpp" />
+    <ClCompile Include="..\src\thelpers.cpp" />
+    <ClCompile Include="..\src\thrapiw.cpp" />
+    <ClCompile Include="..\src\thrpool.cpp" />
+    <ClCompile Include="..\src\ustring.cpp" />
+    <ClCompile Include="..\src\wserror.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\asprint.h" />
+    <ClInclude Include="..\include\bstnode.h" />
+    <ClInclude Include="..\include\bstreei.h" />
+    <ClInclude Include="..\include\btcache.h" />
+    <ClInclude Include="..\include\btnode.h" />
+    <ClInclude Include="..\include\btstack.h" />
+    <ClInclude Include="..\include\cdate.h" />
+    <ClInclude Include="..\include\dbasekey.h" />
+    <ClInclude Include="..\include\dbfcache.h" />
+    <ClInclude Include="..\include\dbugmgr.h" />
+    <ClInclude Include="..\include\devcache.h" />
+    <ClInclude Include="..\include\devtypes.h" />
+    <ClInclude Include="..\include\dfileb.h" />
+    <ClInclude Include="..\include\eds101.h" />
+    <ClInclude Include="..\include\eds201.h" />
+    <ClInclude Include="..\include\edscfg.h" />
+    <ClInclude Include="..\include\edst101.h" />
+    <ClInclude Include="..\include\ehandler.h" />
+    <ClInclude Include="..\include\fstring.h" />
+    <ClInclude Include="..\include\futils.h" />
+    <ClInclude Include="..\include\gpersist.h" />
+    <ClInclude Include="..\include\gthreadt.h" />
+    <ClInclude Include="..\include\gxbstree.h" />
+    <ClInclude Include="..\include\gxbtree.h" />
+    <ClInclude Include="..\include\gxcond.h" />
+    <ClInclude Include="..\include\gxconfig.h" />
+    <ClInclude Include="..\include\gxcrc32.h" />
+    <ClInclude Include="..\include\gxcrctab.h" />
+    <ClInclude Include="..\include\gxdatagm.h" />
+    <ClInclude Include="..\include\gxdbase.h" />
+    <ClInclude Include="..\include\gxderror.h" />
+    <ClInclude Include="..\include\gxdfp64.h" />
+    <ClInclude Include="..\include\gxdfptr.h" />
+    <ClInclude Include="..\include\gxdlcode.h" />
+    <ClInclude Include="..\include\gxdlincs.h" />
+    <ClInclude Include="..\include\gxdstats.h" />
+    <ClInclude Include="..\include\gxdtyp64.h" />
+    <ClInclude Include="..\include\gxdtypes.h" />
+    <ClInclude Include="..\include\gxd_ver.h" />
+    <ClInclude Include="..\include\gxfloat.h" />
+    <ClInclude Include="..\include\gxheader.h" />
+    <ClInclude Include="..\include\gxint16.h" />
+    <ClInclude Include="..\include\gxint32.h" />
+    <ClInclude Include="..\include\gxint64.h" />
+    <ClInclude Include="..\include\gxip32.h" />
+    <ClInclude Include="..\include\gxlist.h" />
+    <ClInclude Include="..\include\gxlistb.h" />
+    <ClInclude Include="..\include\gxmac48.h" />
+    <ClInclude Include="..\include\gxmutex.h" />
+    <ClInclude Include="..\include\gxrdbdef.h" />
+    <ClInclude Include="..\include\gxrdbhdr.h" />
+    <ClInclude Include="..\include\gxrdbms.h" />
+    <ClInclude Include="..\include\gxrdbsql.h" />
+    <ClInclude Include="..\include\gxscomm.h" />
+    <ClInclude Include="..\include\gxsema.h" />
+    <ClInclude Include="..\include\gxsftp.h" />
+    <ClInclude Include="..\include\gxshtml.h" />
+    <ClInclude Include="..\include\gxshttp.h" />
+    <ClInclude Include="..\include\gxshttpc.h" />
+    <ClInclude Include="..\include\gxsmtp.h" />
+    <ClInclude Include="..\include\gxsocket.h" />
+    <ClInclude Include="..\include\gxsping.h" />
+    <ClInclude Include="..\include\gxspop3.h" />
+    <ClInclude Include="..\include\gxsrss.h" />
+    <ClInclude Include="..\include\gxssl.h" />
+    <ClInclude Include="..\include\gxstream.h" />
+    <ClInclude Include="..\include\gxstring.h" />
+    <ClInclude Include="..\include\gxstypes.h" />
+    <ClInclude Include="..\include\gxsurl.h" />
+    <ClInclude Include="..\include\gxsutils.h" />
+    <ClInclude Include="..\include\gxsxml.h" />
+    <ClInclude Include="..\include\gxs_b64.h" />
+    <ClInclude Include="..\include\gxs_ver.h" />
+    <ClInclude Include="..\include\gxtelnet.h" />
+    <ClInclude Include="..\include\gxthread.h" />
+    <ClInclude Include="..\include\gxt_ver.h" />
+    <ClInclude Include="..\include\gxuint16.h" />
+    <ClInclude Include="..\include\gxuint32.h" />
+    <ClInclude Include="..\include\gxuint64.h" />
+    <ClInclude Include="..\include\htmldrv.h" />
+    <ClInclude Include="..\include\httpgrab.h" />
+    <ClInclude Include="..\include\infohog.h" />
+    <ClInclude Include="..\include\keytypes.h" />
+    <ClInclude Include="..\include\leaktest.h" />
+    <ClInclude Include="..\include\logfile.h" />
+    <ClInclude Include="..\include\memblock.h" />
+    <ClInclude Include="..\include\membuf.h" />
+    <ClInclude Include="..\include\ostrbase.h" />
+    <ClInclude Include="..\include\pod.h" />
+    <ClInclude Include="..\include\pscript.h" />
+    <ClInclude Include="..\include\scomserv.h" />
+    <ClInclude Include="..\include\sreg101.h" />
+    <ClInclude Include="..\include\stdafx.h" />
+    <ClInclude Include="..\include\strutil.h" />
+    <ClInclude Include="..\include\systime.h" />
+    <ClInclude Include="..\include\terminal.h" />
+    <ClInclude Include="..\include\thelpers.h" />
+    <ClInclude Include="..\include\thrapiw.h" />
+    <ClInclude Include="..\include\thrpool.h" />
+    <ClInclude Include="..\include\thrtypes.h" />
+    <ClInclude Include="..\include\ustring.h" />
+    <ClInclude Include="..\include\wserror.h" />
+    <ClInclude Include="..\include\wx2incs.h" />
+    <ClInclude Include="..\include\wx3incs.h" />
+    <ClInclude Include="..\include\wxincs.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{8db2f57f-d325-4ddd-805a-c17bcd868799}</ProjectGuid>
+    <RootNamespace>Datareel</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)../include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)../include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)../include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(ProjectDir)../include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>__USE_ANSI_CPP__;__USE_CPP_IOSTREAM__;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;__WIN32__;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>__USE_ANSI_CPP__;__USE_CPP_IOSTREAM__;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;__WIN32__;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>__USE_ANSI_CPP__;__USE_CPP_IOSTREAM__;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;__WIN32__;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>__USE_ANSI_CPP__;__USE_CPP_IOSTREAM__;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;__WIN32__;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

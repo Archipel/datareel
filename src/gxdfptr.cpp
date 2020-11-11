@@ -667,6 +667,18 @@ ssize_t dio_getline(DIOFILE *fp, char **buf, size_t *bufsiz)
 }
 #endif
 
+FAU_t gxdFPTRFileSize(gxdFPTR *stream) {
+	if(!stream || ! stream->fptr) {
+		return -1;
+	}
+	auto curpos = ftell(stream->fptr);
+	fseek(stream->fptr, 0, SEEK_END);
+	FAU_t rv = ftell(stream->fptr);
+	fseek(stream->fptr, curpos, SEEK_SET);
+
+	return rv;
+}
+
 #ifdef __BCC32__
 #pragma warn .8080
 #endif

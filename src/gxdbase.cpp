@@ -138,8 +138,53 @@ const char *gxDatabase::DatabaseExceptionMessage()
   return gxDatabaseExceptionMessage(gxd_error);
 }
 
+gxDatabaseError gxDatabase::Create(gxdFPTR* fp, FAU_t staticSize, __SBYTE__ revisionLetter) {
+    this->fp = fp;
+	
+	// Close any open files 
+	if (Close() != gxDBASE_NO_ERROR) {
+		return gxd_error;
+    }
+
+    if (fp == nullptr) {
+	    is_ok = 0;
+	    is_open = 0;
+	    ready_for_writing = 0;
+	    ready_for_reading = 0;
+	    gxd_error = gxDBASE_FILE_CREATION_ERROR;
+#ifdef __CPP_EXCEPTIONS__
+		throw gxCDatabaseException();
+#else
+    	return gxd_error;
+#endif
+    }
+    else {
+		is_open = 1;
+		is_ok = 1;
+		ready_for_writing = 1;
+		ready_for_reading = 1;
+
+		// Set the specified revision letter. NOTE This will default to the
+		// current revision unless a lower version is specified.
+		SetRevisionLetter(revisionLetter);
+
+		file_header.gxd_hs_fptr = staticSize + FileHeaderSize();
+		last_operation = gxDBASE_READ;
+		if (InitFileHdr() != gxDBASE_NO_ERROR) {
+			return gxd_error;
+		}
+    }
+	
+	// Returns 0 if the file was successfully created and opened.
+	return gxd_error = gxDBASE_NO_ERROR;
+}
+
+gxDatabaseError gxDatabase::Create(FILE *fp, FAU_t staticSize, __SBYTE__ revisionLetter) {
+	return Create(new gxdFPTR(fp), staticSize, revisionLetter);
+}
+
 gxDatabaseError gxDatabase::Create(const char *fname, FAU_t static_size,
-				   __SBYTE__ RevisionLetter)
+                                   __SBYTE__ RevisionLetter)
 // Creates a new file and truncate the file if it already exists.
 // The "static_size" variable is used to reserve a specified number
 // of bytes that will not be affected by the dynamic allocation
@@ -153,38 +198,13 @@ gxDatabaseError gxDatabase::Create(const char *fname, FAU_t static_size,
   if(Close() != gxDBASE_NO_ERROR) return gxd_error;
 
   // Create and truncate existing files
-  fp = gxdFPTRCreate(fname);
+  gxd_error = Create(gxdFPTRCreate(fname), static_size, RevisionLetter);
 
-  if(fp == 0) {
-    is_ok = 0;
-    is_open = 0;
-    ready_for_writing = 0;
-    ready_for_reading = 0;
-    gxd_error = gxDBASE_FILE_CREATION_ERROR;
-#ifdef __CPP_EXCEPTIONS__
-    throw gxCDatabaseException();
-#else
-    return gxd_error;
-#endif
-  }
-  else {
-    is_open = 1;
-    is_ok = 1;
-    ready_for_writing = 1;
-    ready_for_reading = 1;
+  if (gxd_error == gxDBASE_NO_ERROR) {
     strcpy(file_name, fname);
-
-    // Set the specified revision letter. NOTE This will default to the
-    // current revision unless a lower version is specified.
-    SetRevisionLetter(RevisionLetter);
-    
-    file_header.gxd_hs_fptr = static_size + FileHeaderSize();
-    last_operation = gxDBASE_READ;
-    if(InitFileHdr() != gxDBASE_NO_ERROR) return gxd_error;
   }
-  
-  // Returns 0 if the file was successfully created and opened.
-  return gxd_error = gxDBASE_NO_ERROR;
+
+  return gxd_error;
 }
 
 void gxDatabase::SetRevisionLetter(__SBYTE__ RevisionLetter)
@@ -255,8 +275,65 @@ gxDatabaseError gxDatabase::InitFileHdr()
   return gxd_error = gxDBASE_NO_ERROR;
 }
 
+gxDatabaseError gxDatabase::Open(gxdFPTR *fp, gxDatabaseAccessMode mode) {
+	this->fp = fp;
+
+	// Close any open files
+	if (Close() != gxDBASE_NO_ERROR) {
+		return gxd_error;
+	}
+
+	if (fp == nullptr) {
+		ready_for_reading = 0;
+		ready_for_writing = 0;
+		gxd_error = gxDBASE_FILE_OPEN_ERROR;
+#ifdef __CPP_EXCEPTIONS__
+		throw gxCDatabaseException();
+#else
+		return gxd_error;
+#endif
+	}
+	else {
+		ready_for_reading = 1;
+		ready_for_writing = (mode == gxDBASE_READONLY ? 0 : 1);
+		is_open = 1;
+		is_ok = 1;
+		last_operation = gxDBASE_WRITE;
+
+		if (ReadFileHdr() != gxDBASE_NO_ERROR)
+			return gxd_error;
+
+		// Test the file type without checking the revision letter
+		if (memcmp(file_header.gxd_sig, gxDatabase::gxSignature, (gxSignatureSize - 1)) != 0) {
+			gxd_error = gxDBASE_WRONG_FILE_TYPE;
+			is_ok = 0;
+#ifdef __CPP_EXCEPTIONS__
+			throw gxCDatabaseException();
+#else
+			return gxd_error;
+#endif
+		}
+	}
+
+	// Ensure that true end of file is stored in the file header. 
+	FAU_t filesize = gxdFPTRFileSize(fp);
+	if (filesize != -1) {
+		if (file_header.gxd_eof < filesize) {
+			file_header.gxd_eof = filesize;
+			if (Flush() != gxDBASE_NO_ERROR)
+				return gxd_error;
+		}
+	}
+
+	return gxd_error = gxDBASE_NO_ERROR;
+}
+
+gxDatabaseError gxDatabase::Open(FILE *fp, gxDatabaseAccessMode mode) {
+	return Open(new gxdFPTR(fp), mode);
+}
+
 gxDatabaseError gxDatabase::Open(const char *fname,
-				 gxDatabaseAccessMode mode)
+                                 gxDatabaseAccessMode mode)
 // Open an existing file. The "mode" variable determines if the file
 // is opened for read only or read/write access. This function will
 // check the revision letter when opening an existing file. Returns a
@@ -264,61 +341,18 @@ gxDatabaseError gxDatabase::Open(const char *fname,
 // NOTE: This version of the open functions will only accept:
 // gxDBASE_READONLY and gxDBASE_READWRITE access modes.
 {
-  // Close any open files
-  if(Close() != gxDBASE_NO_ERROR) return gxd_error;
+	// Close any open files
+	if (Close() != gxDBASE_NO_ERROR) {
+		return gxd_error;
+	}
 
-  if(mode == gxDBASE_READONLY) { // Open with read only access
-    ready_for_reading = 1;
-    ready_for_writing = 0;
-    fp = gxdFPTROpen(fname, gxDBASE_READONLY);
-  }
-  else { // Open with read/write access
-    ready_for_reading = 1;
-    ready_for_writing = 1;
-    fp = gxdFPTROpen(fname, gxDBASE_READWRITE);
-  }
-    
-  if(fp == 0) {
-    ready_for_reading = 0;
-    ready_for_writing = 0;
-    gxd_error = gxDBASE_FILE_OPEN_ERROR;
-#ifdef __CPP_EXCEPTIONS__
-    throw gxCDatabaseException();
-#else
-    return gxd_error;
-#endif
-  }
-  else {
-    is_open = 1;
-    is_ok = 1;
-    strcpy(file_name, fname);
-    last_operation = gxDBASE_WRITE;
-    
-    if(ReadFileHdr()!= gxDBASE_NO_ERROR) return gxd_error;
+	fp = gxdFPTROpen(fname, mode);
 
-    // Test the file type without checking the revision letter
-    if(memcmp(file_header.gxd_sig, gxDatabase::gxSignature,
-	      (gxSignatureSize-1))) { 
-      gxd_error = gxDBASE_WRONG_FILE_TYPE;
-      is_ok = 0;
-#ifdef __CPP_EXCEPTIONS__
-       throw gxCDatabaseException();
-#else
-       return gxd_error;
-#endif
-    }
-  }
+	if (fp) {
+		strcpy(file_name, fname);
+	}
 
-  // Ensure that true end of file is stored in the file header. 
-  FAU_t filesize = FileSize(fname);
-  if(filesize != -1) {
-    if(file_header.gxd_eof < filesize) {
-      file_header.gxd_eof = filesize;
-      if(Flush() != gxDBASE_NO_ERROR) return gxd_error;
-    }
-  }
-  
-  return gxd_error = gxDBASE_NO_ERROR;
+	return Open(fp, mode);
 }
 
 gxDatabaseError gxDatabase::Close()

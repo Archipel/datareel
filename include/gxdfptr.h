@@ -48,9 +48,8 @@ condition. This change was made to support additional classes
 throughout the library.
 ==============================================================
 */
-// ----------------------------------------------------------- //  
-#ifndef __GX_DATABASE_FILE_POINTER_HPP__
-#define __GX_DATABASE_FILE_POINTER_HPP__
+
+#pragma once
 
 #include "gxdlcode.h"
 
@@ -237,8 +236,10 @@ struct GXDLCODE_API gxdFPTR { // gxDatabase file pointer type
 #if defined _USE_DIRECT_IO_
   DIOFILE *fptr;
 #else
-  FILE *fptr;
+	FILE *fptr;
 #endif
+	gxdFPTR() = default;
+	gxdFPTR(FILE* fp): fptr(fp) {}
 };
 #endif // gxDatabase file system type
 
@@ -258,9 +259,4 @@ GXDLCODE_API FAU_t gxdFPTRSeek(gxdFPTR *stream, FAU_t,
 GXDLCODE_API FAU_t gxdFPTRTell(gxdFPTR *stream);
 GXDLCODE_API int gxdFPTRExists(const char *fname);
 GXDLCODE_API FAU_t gxdFPTRFileSize(const char *fname);
-
-#endif // __GX_DATABASE_FILE_POINTER_HPP__
-// ----------------------------------------------------------- // 
-// ------------------------------- //
-// --------- End of File --------- //
-// ------------------------------- //
+GXDLCODE_API FAU_t gxdFPTRFileSize(gxdFPTR *stream);

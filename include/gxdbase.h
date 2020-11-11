@@ -108,8 +108,12 @@ public: // Database functions
   virtual gxDatabaseError Create(const char *fname, 
 				 FAU_t static_size = (FAU_t)0,
 			 __SBYTE__ RevisionLetter = gxDatabaseRevisionLetter);
+  virtual gxDatabaseError Create(gxdFPTR* fp, FAU_t staticSize = 0, __SBYTE__ revisionLetter = gxDatabaseRevisionLetter);
+  virtual gxDatabaseError Create(FILE* fp, FAU_t staticSize = 0, __SBYTE__ revisionLetter = gxDatabaseRevisionLetter);
   virtual gxDatabaseError Open(const char *fname, 
 			       gxDatabaseAccessMode mode = gxDBASE_READWRITE);
+  virtual gxDatabaseError Open(gxdFPTR* fp, gxDatabaseAccessMode mode = gxDBASE_READWRITE);
+  virtual gxDatabaseError Open(FILE* fp, gxDatabaseAccessMode mode = gxDBASE_READWRITE);
   virtual gxDatabaseError Close();
   virtual gxDatabaseError Flush();
   gxDatabaseError Read(void *buf, __ULWORD__ bytes, 

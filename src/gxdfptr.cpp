@@ -116,14 +116,11 @@ GXDLCODE_API gxdFPTR *gxdFPTRCreate(const char *fname)
   return stream;
 
 #else // Use the 32-bit stdio version by default
-  gxdFPTR *stream = new gxdFPTR;
-  if(!stream) return 0;
-  stream->fptr = fopen(fname, "w+b");
-  if(stream->fptr == 0) {
-    delete stream; // 01/30/2002: Prevent memory leak
-    return 0;
-  }
-  return stream;
+	FILE* fp = fopen(fname, "w+b");
+	if(!fp) {
+		return nullptr;
+	}
+	return new gxdFPtrFile(fp);
 #endif
 }
 
@@ -192,24 +189,11 @@ GXDLCODE_API gxdFPTR *gxdFPTROpen(const char *fname, gxDatabaseAccessMode mode)
   return stream;
 
 #else // Use the 32-bit stdio version by default
-  gxdFPTR *stream = new gxdFPTR;
-  if(!stream) return 0;
-
-  if(mode == gxDBASE_READONLY) { // Open for read only access
-    stream->fptr = fopen(fname, "rb");
-    if(stream->fptr == 0) {
-      delete stream; // 01/30/2002: Prevent memory leak
-      return 0;
-    }
-  }
-  else { // Open for read/write access
-    stream->fptr = fopen(fname, "r+b");
-    if(stream->fptr == 0) {
-      delete stream; // 01/30/2002: Prevent memory leak
-      return 0;
-    }
-  }
-  return stream;
+	FILE* fp = fopen(fname, mode == gxDBASE_READONLY ? "rb" : "r+b");
+	if(!fp) {
+		return nullptr;
+	}
+	return new gxdFPtrFile(fp);
 #endif
 }
 
@@ -235,10 +219,8 @@ GXDLCODE_API int gxdFPTRClose(gxdFPTR *stream)
   return 0;
 
 #else // Use the 32-bit stdio version by default
-  if(fclose(stream->fptr) != 0) return 1;
-  delete stream;
-  stream = 0; // 02/02/2002: Set pointer to zero after releasing it
-  return 0;
+	delete stream;
+	return 0;
 #endif
 }
 
@@ -261,8 +243,7 @@ GXDLCODE_API int gxdFPTRFlush(gxdFPTR *stream)
   return 0;
 
 #else // Use the 32-bit stdio version by default
-  if(fflush(stream->fptr) != 0) return 1;
-  return 0;
+  return stream->flush() ? 0 : 1;
 #endif
 }
 
@@ -272,7 +253,7 @@ GXDLCODE_API __ULWORD__ gxdFPTRRead(gxdFPTR *stream, void *buf,
 // into a memory buffer. Returns the total number if bytes read from the
 // file.
 {
-  if(!stream) return (__ULWORD__)0; // The file stream is not open
+  if(!stream) return 0; // The file stream is not open
 
 #if defined (__64_BIT_DATABASE_ENGINE__)
   return gxdFPTR64Read(stream, buf, bytes);
@@ -288,7 +269,7 @@ GXDLCODE_API __ULWORD__ gxdFPTRRead(gxdFPTR *stream, void *buf,
   return (__ULWORD__)dio_read(stream->fptr, (unsigned char *)buf, bytes);
 
 #else // Use the 32-bit stdio version by default
-  return (__ULWORD__)fread((unsigned char *)buf, 1, bytes, stream->fptr);
+  return stream->read(buf, 1, bytes);
 #endif
 }
 
@@ -298,7 +279,7 @@ GXDLCODE_API __ULWORD__ gxdFPTRWrite(gxdFPTR *stream, const void *buf,
 // current file position. Returns the total number if bytes written
 // to the file.
 {
-  if(!stream) return (__ULWORD__)0; // The file stream is not open
+  if(!stream) return 0; // The file stream is not open
 
 #if defined (__64_BIT_DATABASE_ENGINE__)
   return gxdFPTR64Write(stream, buf, bytes);
@@ -314,7 +295,7 @@ GXDLCODE_API __ULWORD__ gxdFPTRWrite(gxdFPTR *stream, const void *buf,
   return (__ULWORD__)dio_write(stream->fptr, (const unsigned char *)buf, bytes);
 
 #else // Use the 32-bit stdio version by default
- return (__ULWORD__)fwrite((const unsigned char *)buf, 1, bytes, stream->fptr);
+ return stream->write(buf, 1, bytes);
 #endif
 }
 
@@ -325,7 +306,7 @@ GXDLCODE_API FAU_t gxdFPTRSeek(gxdFPTR *stream, FAU_t offset,
 // negative 1 to indicate an error condition or the current stream position 
 // if successful.
 {
-  if(!stream) return (FAU_t)-1; // The file stream is not open
+  if(!stream) return -1; // The file stream is not open
 
 #if defined (__64_BIT_DATABASE_ENGINE__)
   return gxdFPTR64Seek(stream, offset, mode);
@@ -359,24 +340,27 @@ GXDLCODE_API FAU_t gxdFPTRSeek(gxdFPTR *stream, FAU_t offset,
   }
 
 #else // Use the 32-bit stdio version by default
-  if(mode == gxDBASE_SEEK_BEG) {
-    return fseek(stream->fptr, offset, SEEK_SET);
-  }
-  else if(mode == gxDBASE_SEEK_CUR) {
-    return fseek(stream->fptr, offset, SEEK_CUR);
-  }
-  else if(mode == gxDBASE_SEEK_END) {
-    return fseek(stream->fptr, offset, SEEK_CUR);
-  }
-  else { // An invalid seek mode was specified
-    return (FAU_t)-1;
-  }
+	int origin;
+	switch(mode) {
+		case gxDBASE_SEEK_BEG:
+			origin = SEEK_SET;
+			break;
+		case gxDBASE_SEEK_CUR:
+			origin = SEEK_CUR;
+			break;
+		case gxDBASE_SEEK_END:
+			origin = SEEK_END;
+			break;
+		default:
+			return -1;
+	}
+	return stream->seek(offset, origin) ? 0 : -1;
 #endif
 }
 
 GXDLCODE_API FAU_t gxdFPTRTell(gxdFPTR *stream)
 {
-  if(!stream) return (FAU_t)-1; // The file stream is not open
+  if(!stream) return -1; // The file stream is not open
 
 #if defined (__64_BIT_DATABASE_ENGINE__)
   return gxdFPTR64Tell(stream);
@@ -388,7 +372,7 @@ GXDLCODE_API FAU_t gxdFPTRTell(gxdFPTR *stream)
   return dio_tell(stream->fptr);
 
 #else // Use the 32-bit stdio version by default
-  return ftell(stream->fptr);
+  return stream->tell();
 #endif
 }
 
@@ -417,7 +401,7 @@ GXDLCODE_API int gxdFPTRExists(const char *fname)
 
 #else // Use the 32-bit stdio version by default
   struct stat buf;
-  return stat(fname, &buf) == (FAU_t)0;
+  return stat(fname, &buf) == 0;
 #endif
 }
 
@@ -668,15 +652,10 @@ ssize_t dio_getline(DIOFILE *fp, char **buf, size_t *bufsiz)
 #endif
 
 FAU_t gxdFPTRFileSize(gxdFPTR *stream) {
-	if(!stream || ! stream->fptr) {
+	if(!stream) {
 		return -1;
 	}
-	auto curpos = ftell(stream->fptr);
-	fseek(stream->fptr, 0, SEEK_END);
-	FAU_t rv = ftell(stream->fptr);
-	fseek(stream->fptr, curpos, SEEK_SET);
-
-	return rv;
+	return stream->size();
 }
 
 #ifdef __BCC32__

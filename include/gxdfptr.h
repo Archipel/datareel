@@ -51,6 +51,9 @@ throughout the library.
 
 #pragma once
 
+#include <algorithm>
+#include <memory>
+
 #include "gxdlcode.h"
 
 #include <string.h>
@@ -232,15 +235,138 @@ struct GXDLCODE_API gxdFPTR { // Platform specific file pointer type
 #else // Use the stdio version by default. Common to all platforms.
 // Non-platform specific stdio include files
 
-struct GXDLCODE_API gxdFPTR { // gxDatabase file pointer type
-#if defined _USE_DIRECT_IO_
-  DIOFILE *fptr;
-#else
-	FILE *fptr;
-#endif
-	gxdFPTR() = default;
-	gxdFPTR(FILE* fp): fptr(fp) {}
+class gxdFPTR { // gxDatabase file pointer type
+public:
+	virtual ~gxdFPTR() = default;
+	virtual bool flush() {
+		return true;
+	}
+	virtual size_t read(void* buf, size_t size, size_t count) = 0;
+	virtual size_t write(const void *ptr, size_t size, size_t count) = 0;
+	virtual bool seek(long offset, int origin = SEEK_SET) = 0;
+	virtual long tell() = 0;
+	virtual long size() = 0;
 };
+
+class gxdFPtrFile: public gxdFPTR {
+#if defined _USE_DIRECT_IO_
+#  define _FILE DIOFILE
+#else
+#  define _FILE FILE
+#endif
+_FILE* fptr = nullptr;
+
+public:
+	[[deprecated]] gxdFPtrFile() = default;
+	gxdFPtrFile(_FILE* fp): fptr(fp) {}
+	~gxdFPtrFile() override {
+		if(fptr && fclose(fptr) == 0) {
+			fptr = nullptr;
+		}
+	}
+
+	bool flush() override {
+		if(fptr) {
+			return fflush(fptr) == 0;
+		}
+		return true;
+	}
+
+	size_t read(void* buf, size_t size, size_t count) override {
+		return fptr ? fread(buf, size, count, fptr) : 0;
+	}
+
+	size_t write(const void *ptr, size_t size, size_t count) override {
+		return fptr ? fwrite(ptr, size, count, fptr) : 0;
+	}
+
+	bool seek(long offset, int origin) override {
+		return fptr ? fseek(fptr, offset, origin) == 0 : false;
+	}
+
+	long tell() override {
+		return fptr ? ftell(fptr) : -1;
+	}
+
+	long size() override {
+		const auto curpos = tell();
+		seek(0, SEEK_END);
+		const long rv = tell();
+		seek(curpos, SEEK_SET);
+
+		return rv;
+	}
+};
+
+#ifdef min
+#pragma push_macro("min")
+#define POP_min
+#undef min
+#endif
+
+class gxdFPtrMem: public gxdFPTR {
+protected:
+	size_t pos = 0;
+	size_t totalSize = 0;
+	virtual void* getPtr() = 0;
+public:
+	gxdFPtrMem() = default;
+	gxdFPtrMem(size_t totalSize, size_t pos = 0): pos(pos), totalSize(totalSize) {}
+	
+	size_t read(void* buf, size_t size, size_t count) override {
+		const size_t n = std::min(size*count, totalSize-pos);
+		memcpy(buf, static_cast<const uint8_t *>(getPtr()) + pos, n);
+		pos += n;
+		return n;
+	}
+	
+	size_t write(const void* buf, size_t size, size_t count) override {
+		//TODO: set error bit if n < size*count
+		const size_t n = std::min(size*count, totalSize-pos);
+		memcpy(static_cast<uint8_t*>(getPtr()) + pos, buf, n);
+		pos += n;
+		return n;
+	}
+
+	bool seek(long offset, int origin) override {
+		switch(origin) {
+			case SEEK_SET:
+				pos = offset;
+				return true;
+			case SEEK_END:
+				pos = totalSize + offset;
+				return true;
+			case SEEK_CUR:
+				pos += offset;
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	long tell() override {
+		return pos;
+	}
+
+	long size() override {
+		return totalSize;
+	}
+};
+
+#ifdef POP_min
+#pragma pop_macro("min")
+#endif
+
+class gxdFPtrBorrowedMem: public gxdFPtrMem {
+	void* ptr = nullptr;
+
+public:
+	gxdFPtrBorrowedMem(void* p, size_t size, size_t pos = 0): gxdFPtrMem(size, pos), ptr(p) {}
+	void *getPtr() override {
+		return ptr;
+	}
+};
+
 #endif // gxDatabase file system type
 
 // NOTE: Any underlying file system used must provide the basic

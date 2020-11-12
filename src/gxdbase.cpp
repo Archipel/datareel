@@ -180,8 +180,16 @@ gxDatabaseError gxDatabase::Create(gxdFPTR* fp, FAU_t staticSize, __SBYTE__ revi
 }
 
 gxDatabaseError gxDatabase::Create(FILE *fp, FAU_t staticSize, __SBYTE__ revisionLetter) {
-	return Create(new gxdFPTR(fp), staticSize, revisionLetter);
+	return Create(new gxdFPtrFile(fp), staticSize, revisionLetter);
 }
+
+gxDatabaseError gxDatabase::Create(void *memPtr, size_t memBufSize, FAU_t staticSize, __SBYTE__ revisionLetter) {
+	return Create(new gxdFPtrBorrowedMem(memPtr, memBufSize), staticSize, revisionLetter);
+}
+
+/*gxDatabaseError gxDatabase::Create(void *memPtr, FAU_t staticSize, __SBYTE__ revisionLetter) {
+	return Create(new gxdFPTR(memPtr), staticSize, revisionLetter);
+}*/
 
 gxDatabaseError gxDatabase::Create(const char *fname, FAU_t static_size,
                                    __SBYTE__ RevisionLetter)
@@ -276,12 +284,12 @@ gxDatabaseError gxDatabase::InitFileHdr()
 }
 
 gxDatabaseError gxDatabase::Open(gxdFPTR *fp, gxDatabaseAccessMode mode) {
-	this->fp = fp;
-
 	// Close any open files
 	if (Close() != gxDBASE_NO_ERROR) {
 		return gxd_error;
 	}
+	
+	this->fp = fp;
 
 	if (fp == nullptr) {
 		ready_for_reading = 0;
@@ -329,7 +337,11 @@ gxDatabaseError gxDatabase::Open(gxdFPTR *fp, gxDatabaseAccessMode mode) {
 }
 
 gxDatabaseError gxDatabase::Open(FILE *fp, gxDatabaseAccessMode mode) {
-	return Open(new gxdFPTR(fp), mode);
+	return Open(new gxdFPtrFile(fp), mode);
+}
+
+gxDatabaseError gxDatabase::Open(void *memPtr, size_t memBufSize, gxDatabaseAccessMode mode) {
+	return Open(new gxdFPtrBorrowedMem(memPtr, memBufSize), mode);
 }
 
 gxDatabaseError gxDatabase::Open(const char *fname,

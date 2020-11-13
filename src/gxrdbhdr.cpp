@@ -49,6 +49,7 @@ exclude field that will not be copied to or from the disk record.
 
 
 #include "cdate.h"
+#include "gxcrc32.h"
 #include "gxfloat.h"
 #include "gxint16.h"
 

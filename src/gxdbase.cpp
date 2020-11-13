@@ -56,9 +56,10 @@ gDatabase::ReclaimBestFit(), and gxDatabase::ReclaimFirstFit().
 ==============================================================
 */
 // ----------------------------------------------------------- // 
-#include "gxdlcode.h"
 
 #include "gxdbase.h"
+
+#include "gxcrc32.h"
 
 #ifdef __BCC32__
 #pragma warn -8080
@@ -88,7 +89,7 @@ gxDatabase::gxDatabase()
 // Creates a database file object.
 {
 	strcpy(file_name, gxDefaultFileName); // Set the initial file name
-	fp = 0;
+	fp = nullptr;
 
 	// Reset the last reported error and the file status members
 	gxd_error = gxDBASE_NO_ERROR;
@@ -106,7 +107,7 @@ gxDatabase::gxDatabase()
 
 gxDatabase::~gxDatabase() {
 	// PC-lint 09/08/2005: Function may throw exception in destructor
-	Close();
+	gxDatabase::Close();
 }
 
 void gxDatabase::Release()
@@ -120,7 +121,7 @@ void gxDatabase::Release()
 // threads accessing this file pointer have exited or released it.
 {
 	strcpy(file_name, gxDefaultFileName); // Reset the open file name
-	fp = 0;
+	fp = nullptr;
 
 	// Reset the last reported error and the file status members
 	gxd_error = gxDBASE_NO_ERROR;
@@ -128,7 +129,7 @@ void gxDatabase::Release()
 	ready_for_reading = ready_for_writing = 0;
 }
 
-const char *gxDatabase::DatabaseExceptionMessage()
+const char *gxDatabase::DatabaseExceptionMessage() const
 // Returns a null terminated string that can
 // be used to log or print a database exception.
 {
@@ -255,9 +256,9 @@ gxDatabaseError gxDatabase::InitFileHdr()
 // to disk. Returns a non-zero value to indicate an error
 // condition or zero if successful.
 {
-	file_header.gxd_fs_fptr = (FAU_t)0;
+	file_header.gxd_fs_fptr = static_cast<FAU_t>(0);
 	file_header.gxd_eof = file_header.gxd_hs_fptr;
-	file_header.gxd_hb_fptr = (FAU_t)0;
+	file_header.gxd_hb_fptr = static_cast<FAU_t>(0);
 	memcpy(file_header.gxd_sig, gxDatabase::gxSignature, (gxSignatureSize - 1));
 	file_header.gxd_ver = gxDatabase::gxVersion;
 
@@ -279,7 +280,7 @@ gxDatabaseError gxDatabase::InitFileHdr()
 	if (WriteFileLockHdr(lh) != gxDBASE_NO_ERROR)
 		return gxd_error;
 
-	if (file_header.gxd_hs_fptr > (FAU_t)FileHeaderSize()) {
+	if (file_header.gxd_hs_fptr > static_cast<FAU_t>(FileHeaderSize())) {
 		__SBYTE__ zero_byte = 0;
 		if (Write(&zero_byte, 1, file_header.gxd_hs_fptr - 1) != gxDBASE_NO_ERROR)
 			return gxd_error;
@@ -396,7 +397,7 @@ gxDatabaseError gxDatabase::Close()
 	is_ok = 0;
 	ready_for_reading = 0;
 	ready_for_writing = 0;
-	fp = 0; // Set the file pointer to zero after the file is closed
+	fp = nullptr; // Set the file pointer to zero after the file is closed
 
 	return gxd_error = gxDBASE_NO_ERROR;
 }
@@ -418,7 +419,7 @@ gxDatabaseError gxDatabase::Flush()
 			return gxd_error;
 #endif
 		}
-		Seek((FAU_t)0, gxDBASE_SEEK_CUR);
+		Seek(static_cast<FAU_t>(0), gxDBASE_SEEK_CUR);
 	}
 	return gxd_error = gxDBASE_NO_ERROR;
 }
@@ -429,7 +430,7 @@ gxDatabaseError gxDatabase::Seek(FAU_t offset, gxDatabaseSeekMode mode)
 // value to indicate an error condition or zero if successful.
 {
 	if (IsOK()) {
-		if (gxdFPTRSeek(fp, offset, mode) == (FAU_t)-1) {
+		if (gxdFPTRSeek(fp, offset, mode) == static_cast<FAU_t>(-1)) {
 			gxd_error = gxDBASE_FILE_SEEK_ERROR;
 #ifdef __CPP_EXCEPTIONS__
       throw gxCDatabaseException();
@@ -475,7 +476,7 @@ FAU_t gxDatabase::SeekTo(FAU_t file_address)
 	else {
 		// Current file position equals the specified address
 		// Find current the position
-		Seek((FAU_t)0, gxDBASE_SEEK_CUR);
+		Seek(static_cast<FAU_t>(0), gxDBASE_SEEK_CUR);
 	}
 
 	return FilePosition(); // Return current file position after seeking
@@ -489,7 +490,7 @@ gxDatabaseError gxDatabase::Read(void *buf, __ULWORD__ bytes, FAU_t file_address
 	if ((IsOK()) && (ReadyForReading())) {
 		if (file_address == gxCurrAddress) {
 			if (last_operation == gxDBASE_WRITE) {
-				if (Seek((FAU_t)0, gxDBASE_SEEK_CUR) != gxDBASE_NO_ERROR)
+				if (Seek(static_cast<FAU_t>(0), gxDBASE_SEEK_CUR) != gxDBASE_NO_ERROR)
 					return gxd_error;
 			}
 		}
@@ -537,7 +538,7 @@ gxDatabaseError gxDatabase::Write(const void *buf, __ULWORD__ bytes, FAU_t file_
 	if ((IsOK()) && (ReadyForWriting())) {
 		if (file_address == gxCurrAddress) {
 			if (last_operation == gxDBASE_READ) {
-				if (Seek((FAU_t)0, gxDBASE_SEEK_CUR) != gxDBASE_NO_ERROR)
+				if (Seek(static_cast<FAU_t>(0), gxDBASE_SEEK_CUR) != gxDBASE_NO_ERROR)
 					return gxd_error;
 			}
 		}
@@ -587,12 +588,12 @@ gxDatabaseError gxDatabase::Write(const void *buf, __ULWORD__ bytes, FAU_t file_
 			return gxd_error;
 #endif
 		}
-		if (Seek((FAU_t)0, gxDBASE_SEEK_CUR) != gxDBASE_NO_ERROR)
+		if (Seek(static_cast<FAU_t>(0), gxDBASE_SEEK_CUR) != gxDBASE_NO_ERROR)
 			return gxd_error;
 	}
 
 	if (bit_test) {
-		__ULWORD__ w_csum = calcCRC32((char *)buf, bytes);
+		__ULWORD__ w_csum = calcCRC32(static_cast<const char *>(buf), bytes);
 		__ULWORD__ r_csum = CalcChecksum(bytes, buf_address);
 
 		// Check for file errors
@@ -627,13 +628,12 @@ gxUINT32 gxDatabase::WriteObjectChecksum(FAU_t object_address)
 		case 'e':
 		case 'E':
 			// Return zero for any file below rev 'A' or rev 'E' files
-			return (gxUINT32)0;
+			return static_cast<gxUINT32>(0);
 		default: // Rev 'A', 'B', 'C', and 'D'
 			break;
 	}
 
 	gxUINT32 CRC;
-	__ULWORD__ bytes;
 	gxBlockHeader blk_hdr;
 
 	// Calculate the address of the block header
@@ -642,16 +642,16 @@ gxUINT32 gxDatabase::WriteObjectChecksum(FAU_t object_address)
 	if (IsOK()) {
 		// Make sure that the this is a pre-alloacted block.
 		if (ReadBlockHdr(blk_hdr, block_address) != gxDBASE_NO_ERROR) {
-			return (gxUINT32)0;
+			return static_cast<gxUINT32>(0);
 		}
 
 		// Calculate a checksum based on the block data
-		bytes = (blk_hdr.block_length - BlockHeaderSize()) - sizeof(gxChecksum);
+		__ULWORD__ bytes = (blk_hdr.block_length - BlockHeaderSize()) - sizeof(gxChecksum);
 		CRC = CalcChecksum(bytes, object_address);
 
 		// Check for file errors
 		if (gxd_error != gxDBASE_NO_ERROR)
-			return (gxUINT32)0;
+			return static_cast<gxUINT32>(0);
 
 		// offset address to point to the checksum field located
 		// at the end of the block.
@@ -659,7 +659,7 @@ gxUINT32 gxDatabase::WriteObjectChecksum(FAU_t object_address)
 
 		// Write the CRC for the block header and the block data.
 		if (Write(&CRC, sizeof(CRC), object_address) != gxDBASE_NO_ERROR)
-			return (gxUINT32)0;
+			return static_cast<gxUINT32>(0);
 	}
 
 	return CRC;
@@ -694,7 +694,6 @@ int gxDatabase::ReadObjectChecksum(FAU_t object_address, __ULWORD__ *object_crc,
 
 	gxUINT32 CRC, objectCRC;
 	gxBlockHeader blk_hdr;
-	__ULWORD__ bytes;
 
 	// Calculate the address of the block header
 	FAU_t block_address = object_address - BlockHeaderSize();
@@ -702,11 +701,11 @@ int gxDatabase::ReadObjectChecksum(FAU_t object_address, __ULWORD__ *object_crc,
 	if (IsOK()) {
 		// Make sure that the this is a pre-alloacted block.
 		if (ReadBlockHdr(blk_hdr, block_address) != gxDBASE_NO_ERROR) {
-			return (gxUINT32)0;
+			return static_cast<gxUINT32>(0);
 		}
 
 		// Calculate a checksum based on the block data
-		bytes = (blk_hdr.block_length - BlockHeaderSize()) - sizeof(gxChecksum);
+		__ULWORD__ bytes = (blk_hdr.block_length - BlockHeaderSize()) - sizeof(gxChecksum);
 		CRC = CalcChecksum(bytes, object_address);
 
 		// Check for file errors
@@ -748,7 +747,7 @@ __ULWORD__ gxDatabase::CalcChecksum(__ULWORD__ bytes, FAU_t file_address, int me
 	__ULWORD__ CRC = 0;
 	__ULWORD__ len = bytes;
 	unsigned char data;
-	char *buf = 0;
+	char *buf = nullptr;
 
 	// Create a buffer equal to the object length
 	if (mem_alloc)
@@ -868,7 +867,7 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 // is written to the allocated space. Returns the file address of the newly
 // allocated block or zero if an error occurs.
 {
-	FAU_t file_address = (FAU_t)0;
+	FAU_t file_address = static_cast<FAU_t>(0);
 	gxBlockHeader blk_hdr;
 	gxRecordLockHeader rlh; // Revision C and higher
 
@@ -889,7 +888,7 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 		}
 
 		// Try to reclaim a deleted or removed block
-		if (file_header.gxd_fs_fptr != (FAU_t)0) {
+		if (file_header.gxd_fs_fptr != static_cast<FAU_t>(0)) {
 			if (method == gxDBASE_RECLAIM_FIRSTFIT) {
 				file_address = ReclaimFirstFit(bytes);
 			}
@@ -898,11 +897,11 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 			}
 			else {
 				// Extend the file without reclaiming any deleted/removed blocks
-				file_address = (FAU_t)0;
+				file_address = static_cast<FAU_t>(0);
 			}
 		}
 
-		if (IsOK() && file_address == (FAU_t)0) {
+		if (IsOK() && file_address == static_cast<FAU_t>(0)) {
 			file_address = file_header.gxd_eof;
 			file_header.gxd_eof += bytes;
 
@@ -910,13 +909,13 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 			char *mbuf = new char[bytes];
 			memset(mbuf, 0, bytes);
 			if (Write(mbuf, bytes, file_address) != gxDBASE_NO_ERROR) {
-				delete mbuf;
-				return (FAU_t)0;
+				delete[] mbuf;
+				return static_cast<FAU_t>(0);
 			}
-			delete mbuf;
+			delete[] mbuf;
 
 			// Update the file stats for each new block allocated
-			file_stats_header.num_blocks++;
+			++file_stats_header.num_blocks;
 
 			// Update the highest block pointer
 			file_header.gxd_hb_fptr = file_address;
@@ -934,7 +933,7 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 
 		// Write header for this block
 		if (WriteBlockHdr(blk_hdr, file_address) != gxDBASE_NO_ERROR)
-			return (FAU)0;
+			return static_cast<FAU>(0);
 		// Write a new record lock header (Revision C and higher)
 		switch (rev_letter) {
 			case 'c':
@@ -942,7 +941,7 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 			case 'd':
 			case 'D':
 				if (Write(&rlh, sizeof(gxRecordLockHeader)) != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				break;
 			default: // Rev '\0', 'A', 'B', and 'E'
 				break;
@@ -953,7 +952,7 @@ FAU_t gxDatabase::Alloc(__ULWORD__ bytes, gxDatabaseReclaimMethod method)
 #ifdef __CPP_EXCEPTIONS__
     throw gxCDatabaseException();
 #else
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 #endif
 	}
 	if (file_address > file_header.gxd_hb_fptr)
@@ -991,7 +990,7 @@ int gxDatabase::Delete(FAU_t object_address, int remove_object)
 		return 0;
 
 	// Return false if block is already deleted
-	if ((__SBYTE__(blk_hdr.block_status & 0xff)) != gxNormalBlock)
+	if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) != gxNormalBlock)
 		return 0;
 
 	// Mark the block removed and set the status 
@@ -1000,11 +999,11 @@ int gxDatabase::Delete(FAU_t object_address, int remove_object)
 	block_status &= 0xffffff00;
 	if (remove_object) {
 		block_status += gxRemovedBlock;
-		file_stats_header.removed_blocks++; // Update the file stats header
+		++file_stats_header.removed_blocks; // Update the file stats header
 	}
 	else {
 		block_status += gxDeletedBlock;
-		file_stats_header.deleted_blocks++; // Update the file stats header
+		++file_stats_header.deleted_blocks; // Update the file stats header
 	}
 	blk_hdr.block_status = block_status;
 
@@ -1028,11 +1027,6 @@ int gxDatabase::Delete(FAU_t object_address, int remove_object)
 		return 0;
 #endif
 	}
-
-	// 06/02/2002: Eliminate unreachable code in function warning under BCC32
-#if !defined (__BCC32__) && !defined(__PCLINT_CHECK__)
-	return 0; // Ensure that all paths return a value
-#endif
 }
 
 gxStreamPos gxDatabase::FilePosition()
@@ -1044,7 +1038,7 @@ gxStreamPos gxDatabase::FilePosition()
 #ifdef __CPP_EXCEPTIONS__
     throw gxCDatabaseException();
 #else
-		return (gxStreamPos)-1;
+		return static_cast<gxStreamPos>(-1);
 #endif
 	}
 
@@ -1067,7 +1061,7 @@ const char *gxDatabase::GetSignature() const
 	char *s = new char[len];
 	memcpy(s, file_header.gxd_sig, len);
 	s[len - 1] = 0;
-	return (const char *)s;
+	return static_cast<const char *>(s);
 }
 
 char *gxDatabase::GetSignature()
@@ -1101,7 +1095,7 @@ FAU_t gxDatabase::TotalBlocks()
 
 	gxBlockHeader blk_hdr;
 	FAU_t block_address = FindFirstBlock(0); // Search the entire file
-	FAU_t i = (FAU_t)0;
+	FAU_t i = static_cast<FAU_t>(0);
 
 	while (block_address) {
 		// Until a block of a valid size is found
@@ -1139,16 +1133,16 @@ FAU gxDatabase::DeleteBlocks(FAU *d, FAU *r)
 // Depreciated function included for backward compatibility only.
 {
 	if (d)
-		*d = (FAU)0;
+		*d = static_cast<FAU>(0);
 	if (r)
-		*r = (FAU)0;
-	FAU_t tl, dl, rm;
-	tl = DeletedBlocks(&dl, &rm);
+		*r = static_cast<FAU>(0);
+	FAU_t dl, rm;
+	FAU_t tl = DeletedBlocks(&dl, &rm);
 	if (d)
-		*d = (FAU)dl;
+		*d = static_cast<FAU>(dl);
 	if (r)
-		*r = (FAU)rm;
-	return (FAU)tl;
+		*r = static_cast<FAU>(rm);
+	return static_cast<FAU>(tl);
 }
 
 FAU_t gxDatabase::DeletedBlocks(FAU_t *d, FAU_t *r)
@@ -1165,23 +1159,23 @@ FAU_t gxDatabase::DeletedBlocks(FAU_t *d, FAU_t *r)
 		case 'E':
 			// Set the deleted and removed pointers to zero
 			if (d)
-				*d = (FAU_t)file_stats_header.deleted_blocks;
+				*d = static_cast<FAU_t>(file_stats_header.deleted_blocks);
 			if (r)
-				*r = (FAU_t)file_stats_header.removed_blocks;
-			return FAU_t(file_stats_header.deleted_blocks + file_stats_header.removed_blocks);
+				*r = static_cast<FAU_t>(file_stats_header.removed_blocks);
+			return static_cast<FAU_t>(file_stats_header.deleted_blocks + file_stats_header.removed_blocks);
 		default: // Rev '\0', 'A', 'B', and 'C'
 			break;
 	}
 
 	gxBlockHeader blk_hdr;
 	FAU_t block_address = file_header.gxd_fs_fptr;
-	FAU_t i = (FAU_t)0;
+	FAU_t i = static_cast<FAU_t>(0);
 
 	// Set the deleted and removed pointers to zero
 	if (d)
-		*d = (FAU_t)0;
+		*d = static_cast<FAU_t>(0);
 	if (r)
-		*r = (FAU_t)0;
+		*r = static_cast<FAU_t>(0);
 
 	if (block_address == gxFSListCorrupt)
 		return gxFSListCorrupt;
@@ -1207,13 +1201,13 @@ FAU_t gxDatabase::DeletedBlocks(FAU_t *d, FAU_t *r)
 		// Next deleted database pointer is bad. This will cause
 		// an infinite loop if the end of the free space
 		// list is pointing to valid block.
-		switch ((__SBYTE__)(blk_hdr.block_status & 0xff)) {
+		switch (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff)) {
 			case gxDeletedBlock:
 				// Make sure the block is not pointing to itself
 				if (block_address == blk_hdr.block_nd_fptr) {
 					file_header.gxd_fs_fptr = gxFSListCorrupt;
 					WriteFileHdr();
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 				break;
 
@@ -1222,14 +1216,14 @@ FAU_t gxDatabase::DeletedBlocks(FAU_t *d, FAU_t *r)
 				if (block_address == blk_hdr.block_nd_fptr) {
 					file_header.gxd_fs_fptr = gxFSListCorrupt;
 					WriteFileHdr();
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 				break;
 
 			default:
 				file_header.gxd_fs_fptr = gxFSListCorrupt;
 				WriteFileHdr();
-				return (FAU_t)0;
+				return static_cast<FAU_t>(0);
 		}
 
 		block_address = blk_hdr.block_nd_fptr;
@@ -1238,13 +1232,13 @@ FAU_t gxDatabase::DeletedBlocks(FAU_t *d, FAU_t *r)
 		SeekTo(block_address);
 
 		if (d) {
-			if ((__SBYTE__(blk_hdr.block_status & 0xff)) == gxDeletedBlock)
-				*d = *d + (FAU_t)1;
+			if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) == gxDeletedBlock)
+				*d = *d + static_cast<FAU_t>(1);
 		}
 
 		if (r) {
-			if ((__SBYTE__(blk_hdr.block_status & 0xff)) == gxRemovedBlock)
-				*r = *r + (FAU_t)1;
+			if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) == gxRemovedBlock)
+				*r = *r + static_cast<FAU_t>(1);
 		}
 
 		i++;
@@ -1310,21 +1304,20 @@ int gxDatabase::UnDelete(FAU_t object_address)
 // Undeletes a block if it has not been removed or reclaimed.
 {
 	gxBlockHeader blk_hdr, prev_blk;
-	FAU_t addr, block_address;
 
 	// 06/02/2002: Initialize to eliminate W8013 warning under BCC32. 
 	// Possible use of variable before definition in function.
-	FAU_t prev_addr = (FAU_t)0;
+	FAU_t prev_addr = static_cast<FAU_t>(0);
 
-	addr = file_header.gxd_fs_fptr;
+	FAU_t addr = file_header.gxd_fs_fptr;
 
 	// Address of block header
-	block_address = object_address - BlockHeaderSize();
+	FAU_t block_address = object_address - BlockHeaderSize();
 	if (ReadBlockHdr(blk_hdr, block_address) != gxDBASE_NO_ERROR)
 		return 0;
 
 	// Return false if block is not marked deleted 
-	if ((__SBYTE__(blk_hdr.block_status & 0xff)) != gxDeletedBlock)
+	if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) != gxDeletedBlock)
 		return 0;
 
 	// Loop until the block is found in the free space list
@@ -1347,7 +1340,7 @@ int gxDatabase::UnDelete(FAU_t object_address)
 		// Next deleted database pointer is bad. This will cause
 		// an infinite loop if the end of the free space
 		// list is pointing to valid block.
-		switch ((__SBYTE__)(blk_hdr.block_status & 0xff)) {
+		switch (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff)) {
 			case gxDeletedBlock:
 				// Make sure the block is not pointing to itself 
 				if (addr == blk_hdr.block_nd_fptr) {
@@ -1376,10 +1369,10 @@ int gxDatabase::UnDelete(FAU_t object_address)
 		if (addr == block_address) {
 
 			// Update the file stats header
-			if (file_stats_header.deleted_blocks > (FAU)0)
-				file_stats_header.deleted_blocks--;
+			if (file_stats_header.deleted_blocks > static_cast<FAU>(0))
+				--file_stats_header.deleted_blocks;
 
-			if (prev_addr == (FAU_t)0) {
+			if (prev_addr == static_cast<FAU_t>(0)) {
 				// Adjust the free space list
 				// At the head of freespace list, so make a new head
 				file_header.gxd_fs_fptr = blk_hdr.block_nd_fptr;
@@ -1475,7 +1468,7 @@ FAU_t gxDatabase::StaticArea() {
 		ReadFileHdr();
 	}
 
-	return (FAU_t)(file_header.gxd_hs_fptr - FileHeaderSize());
+	return static_cast<FAU_t>(file_header.gxd_hs_fptr - FileHeaderSize());
 }
 
 int gxDatabase::TestFileHeader()
@@ -1528,15 +1521,15 @@ int gxDatabase::TestBlockHeader(const gxBlockHeader &hdr)
 
 	// Read the block status
 	__ULWORD__ block_status = hdr.block_status;
-	__SBYTE__ unused_1 = __SBYTE__((block_status & 0xFF000000) >> 24);
-	__SBYTE__ unused_2 = __SBYTE__((block_status & 0xFF0000) >> 16);
+	__SBYTE__ unused_1 = static_cast<__SBYTE__>((block_status & 0xFF000000) >> 24);
+	__SBYTE__ unused_2 = static_cast<__SBYTE__>((block_status & 0xFF0000) >> 16);
 	if ((unused_1 != 0) && (unused_2 != 0)) {
 		return 0; // This is not a valid block
 	}
 
 	// Test the status and contol characters 
-	__SBYTE__ control = __SBYTE__((block_status & 0xFF00) >> 8);
-	__SBYTE__ status = __SBYTE__(block_status & 0xff);
+	__SBYTE__ control = static_cast<__SBYTE__>((block_status & 0xFF00) >> 8);
+	__SBYTE__ status = static_cast<__SBYTE__>(block_status & 0xff);
 
 	switch (status) {
 		case gxBadBlock:
@@ -1606,7 +1599,7 @@ FAU_t gxDatabase::FileSize(const char *fname)
 // and re-opened to ensure that all the buffers are flushed
 // to disk. Returns -1 to indicate an error condition.
 {
-	return (FAU_t)gxdFPTRFileSize(fname);
+	return static_cast<FAU_t>(gxdFPTRFileSize(fname));
 }
 
 // ==============================================================
@@ -1638,43 +1631,42 @@ FAU_t gxDatabase::ReclaimBestFit(__ULWORD__ bytes)
 {
 	// Cannot reuse any blocks if the free space list is corrupt
 	if (file_header.gxd_fs_fptr == gxFSListCorrupt)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	gxBlockHeader blk_hdr, prev_blk, new_blk;
 	gxBlockHeader best_fit_prev_blk, best_fit_blk;
-	FAU_t addr, prev_addr, new_addr;
 	FAU_t best_fit_addr;
 	// PC-lint 09/08/2005: Variable init warning
-	FAU_t best_fit_prev_addr = (FAU_t)0;
-	__ULWORD__ avail_len, unused_len, best_fit_unused_len = 0;
-	__SBYTE__ status;
+	FAU_t best_fit_prev_addr = static_cast<FAU_t>(0);
+	__ULWORD__ unused_len, best_fit_unused_len = 0;
+	__SBYTE__ status = 0;
 
 	// Constants for the best-fit criteria. NOTE: The maximum length
 	// of a block to reuse equals: (max_limit * byte_multiple) * bytes 
 	const unsigned max_limit = 10; // Maximum number of byte multiples
 	const double byte_multiple = .25; // Byte multiples  
 
-	double best_byte_len, byte_percent = 0;
-	double bytes_requested = (double)bytes;
+	double byte_percent = 0;
+	double bytes_requested = static_cast<double>(bytes);
 	unsigned i;
 	unsigned best_length[max_limit];
 
 	// Calculate the best-fit byte values
 	for (i = 0; i < max_limit; i++) {
 		byte_percent += byte_multiple;
-		best_byte_len = bytes_requested * byte_percent;
-		best_length[i] = (unsigned)best_byte_len;
+		double best_byte_len = bytes_requested * byte_percent;
+		best_length[i] = static_cast<unsigned>(best_byte_len);
 	}
 
-	addr = file_header.gxd_fs_fptr;
+	FAU_t addr = file_header.gxd_fs_fptr;
 	SeekTo(addr);
-	prev_addr = best_fit_addr = (FAU_t)0;
+	FAU_t prev_addr = best_fit_addr = static_cast<FAU_t>(0);
 
 	// Search the entire free space list until an exact-fit 
 	// or a best-fit block is found.
 	while (addr) {
 		if (Read(&blk_hdr, sizeof(gxBlockHeader)) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		if (!IsOK())
 			break;
 
@@ -1683,21 +1675,21 @@ FAU_t gxDatabase::ReclaimBestFit(__ULWORD__ bytes)
 		if (!TestBlockHeader(blk_hdr)) {
 			file_header.gxd_fs_fptr = gxFSListCorrupt;
 			WriteFileHdr();
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		}
 
 		// If the block is not marked deleted or removed, the
 		// Next deleted pointer is bad. This will cause
 		// an infinite loop if the end of the free space
 		// list is pointing to valid block.
-		status = (__SBYTE__)(blk_hdr.block_status & 0xff);
+		status = static_cast<__SBYTE__>(blk_hdr.block_status & 0xff);
 		switch (status) {
 			case gxDeletedBlock:
 				// Make sure the block is not pointing to itself 
 				if (addr == blk_hdr.block_nd_fptr) {
 					file_header.gxd_fs_fptr = gxFSListCorrupt;
 					WriteFileHdr();
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 				break;
 
@@ -1706,18 +1698,18 @@ FAU_t gxDatabase::ReclaimBestFit(__ULWORD__ bytes)
 				if (addr == blk_hdr.block_nd_fptr) {
 					file_header.gxd_fs_fptr = gxFSListCorrupt;
 					WriteFileHdr();
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 				break;
 
 			default:
 				file_header.gxd_fs_fptr = gxFSListCorrupt;
 				WriteFileHdr();
-				return (FAU_t)0;
+				return static_cast<FAU_t>(0);
 		}
 
 		// Length of object plus sizeof block header
-		avail_len = blk_hdr.block_length;
+		__ULWORD__ avail_len = blk_hdr.block_length;
 
 		// Unused length must be big enough to hold two block headers
 		// plus the block overhead plus the object.
@@ -1746,31 +1738,31 @@ FAU_t gxDatabase::ReclaimBestFit(__ULWORD__ bytes)
 			// Block is an exact fit
 			// Update the file stats header for exact fit blocks
 			if (status == gxDeletedBlock) {
-				if (file_stats_header.deleted_blocks > (FAU)0)
-					file_stats_header.deleted_blocks--;
+				if (file_stats_header.deleted_blocks > static_cast<FAU>(0))
+					--file_stats_header.deleted_blocks;
 			}
 			else if (status == gxRemovedBlock) {
-				if (file_stats_header.removed_blocks > (FAU)0)
-					file_stats_header.removed_blocks--;
+				if (file_stats_header.removed_blocks > static_cast<FAU>(0))
+					--file_stats_header.removed_blocks;
 			}
 
-			if (prev_addr == (FAU_t)0) {
+			if (prev_addr == static_cast<FAU_t>(0)) {
 				// At the head of freespace list
 				file_header.gxd_fs_fptr = blk_hdr.block_nd_fptr;
 				// Update all the file headers
 				if (WriteFileHdr() != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 			}
 			else {
 				// In the middle of free space
 				prev_blk.block_nd_fptr = blk_hdr.block_nd_fptr;
 				if (WriteBlockHdr(prev_blk, prev_addr) != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				// Update the file stats header 
 				if (WriteFileStatsHdr(file_stats_header) != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 			}
-			return (FAU_t)IsOK() ? (FAU_t)addr : (FAU_t)0;
+			return static_cast<FAU_t>(IsOK()) ? static_cast<FAU_t>(addr) : static_cast<FAU_t>(0);
 		}
 
 		if (unused_len > 0) {
@@ -1799,21 +1791,21 @@ FAU_t gxDatabase::ReclaimBestFit(__ULWORD__ bytes)
 	} // End of block search
 
 	// Could not find a best fit
-	if (best_fit_addr == (FAU_t)0)
-		return (FAU_t)0;
+	if (best_fit_addr == static_cast<FAU_t>(0))
+		return static_cast<FAU_t>(0);
 
 	// Update the file stats header for exact best fit blocks
 	if (status == gxDeletedBlock) {
-		if (file_stats_header.deleted_blocks > (FAU)0)
-			file_stats_header.deleted_blocks--;
+		if (file_stats_header.deleted_blocks > static_cast<FAU>(0))
+			--file_stats_header.deleted_blocks;
 	}
 	else if (status == gxRemovedBlock) {
-		if (file_stats_header.removed_blocks > (FAU)0)
-			file_stats_header.removed_blocks--;
+		if (file_stats_header.removed_blocks > static_cast<FAU>(0))
+			--file_stats_header.removed_blocks;
 	}
 
 	// Reuse the block and any remaining bytes
-	new_addr = best_fit_addr + bytes;
+	FAU_t new_addr = best_fit_addr + bytes;
 	new_blk.block_check_word = gxDatabase::gxInternalCheckWord;
 
 	// Mark the block with a removed attribute 
@@ -1823,32 +1815,32 @@ FAU_t gxDatabase::ReclaimBestFit(__ULWORD__ bytes)
 	new_blk.block_length = best_fit_unused_len;
 
 	// Update the file statistics header
-	file_stats_header.num_blocks++; // Another block has been allocated
-	file_stats_header.removed_blocks++;
+	++file_stats_header.num_blocks; // Another block has been allocated
+	++file_stats_header.removed_blocks;
 
 	if (WriteBlockHdr(new_blk, new_addr) != gxDBASE_NO_ERROR)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	// Adjust the free space list
-	if (best_fit_prev_addr == (FAU_t)0) {
+	if (best_fit_prev_addr == static_cast<FAU_t>(0)) {
 		// At the head of freespace
 		file_header.gxd_fs_fptr = new_addr;
 		// Update all headers
 		if (WriteFileHdr() != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 	}
 	else {
 		// In the middle of freespace
 		best_fit_prev_blk.block_nd_fptr = new_addr;
 		if (WriteBlockHdr(best_fit_prev_blk, best_fit_prev_addr) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		// Update the file stats header 
 		if (WriteFileStatsHdr(file_stats_header) != gxDBASE_NO_ERROR) {
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		}
 	}
 
-	return (FAU_t)IsOK() ? (FAU_t)best_fit_addr : (FAU_t)0;
+	return static_cast<FAU_t>(IsOK()) ? static_cast<FAU_t>(best_fit_addr) : static_cast<FAU_t>(0);
 }
 
 FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
@@ -1869,21 +1861,19 @@ FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
 {
 	// Cannot reuse any blocks if the free space list is corrupt
 	if (file_header.gxd_fs_fptr == gxFSListCorrupt)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	gxBlockHeader blk_hdr, prev_blk, new_blk;
-	FAU_t addr, prev_addr, new_addr;
-	__ULWORD__ avail_len, unused_len;
-	__SBYTE__ status;
+	__ULWORD__ unused_len;
 
-	addr = file_header.gxd_fs_fptr;
-	prev_addr = (FAU_t)0;
+	FAU_t addr = file_header.gxd_fs_fptr;
+	FAU_t prev_addr = static_cast<FAU_t>(0);
 	SeekTo(addr);
 
 	// Search the free space list until a first-fit is found
 	while (addr) {
 		if (Read(&blk_hdr, sizeof(gxBlockHeader)) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 
 		if (!IsOK())
 			break;
@@ -1893,21 +1883,21 @@ FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
 		if (!TestBlockHeader(blk_hdr)) {
 			file_header.gxd_fs_fptr = gxFSListCorrupt;
 			WriteFileHdr();
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		}
 
 		// If the block is not marked deleted or removed, the
 		// Next deleted pointer is bad. This will cause
 		// an infinite loop if the end of the free space
 		// list is pointing to valid block.
-		status = (__SBYTE__)(blk_hdr.block_status & 0xff);
+		__SBYTE__ status = static_cast<__SBYTE__>(blk_hdr.block_status & 0xff);
 		switch (status) {
 			case gxDeletedBlock:
 				// Make sure the block is not pointing to itself 
 				if (addr == blk_hdr.block_nd_fptr) {
 					file_header.gxd_fs_fptr = gxFSListCorrupt;
 					WriteFileHdr();
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 				break;
 
@@ -1916,18 +1906,18 @@ FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
 				if (addr == blk_hdr.block_nd_fptr) {
 					file_header.gxd_fs_fptr = gxFSListCorrupt;
 					WriteFileHdr();
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 				break;
 
 			default:
 				file_header.gxd_fs_fptr = gxFSListCorrupt;
 				WriteFileHdr();
-				return (FAU_t)0;
+				return static_cast<FAU_t>(0);
 		}
 
 		// Length of object plus sizeof block header
-		avail_len = blk_hdr.block_length;
+		__ULWORD__ avail_len = blk_hdr.block_length;
 
 		// Unused length must be big enough to hold two block headers
 		// plus the block overhead plus the object.
@@ -1955,39 +1945,39 @@ FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
 		if ((avail_len == bytes) || (unused_len > 0)) {
 			// Update the file stats header for exact fit and first fit blocks
 			if (status == gxDeletedBlock) {
-				if (file_stats_header.deleted_blocks > (FAU)0)
-					file_stats_header.deleted_blocks--;
+				if (file_stats_header.deleted_blocks > static_cast<FAU>(0))
+					--file_stats_header.deleted_blocks;
 			}
 			else if (status == gxRemovedBlock) {
-				if (file_stats_header.removed_blocks > (FAU)0)
-					file_stats_header.removed_blocks--;
+				if (file_stats_header.removed_blocks > static_cast<FAU>(0))
+					--file_stats_header.removed_blocks;
 			}
 		}
 
 		if (avail_len == bytes) {
 			// Block is an exact fit
-			if (prev_addr == (FAU_t)0) {
+			if (prev_addr == static_cast<FAU_t>(0)) {
 				// At the head of freespace list
 				file_header.gxd_fs_fptr = blk_hdr.block_nd_fptr;
 				// Update all the file headers
 				if (WriteFileHdr() != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 			}
 			else {
 				// In the middle of free space
 				prev_blk.block_nd_fptr = blk_hdr.block_nd_fptr;
 				if (WriteBlockHdr(prev_blk, prev_addr) != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				// Update the file stats header 
 				if (WriteFileStatsHdr(file_stats_header) != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 			}
 			break;
 		}
 
 		if (unused_len > 0) {
 			// Block is a first fit, reuse any remaining bytes
-			new_addr = addr + bytes;
+			FAU_t new_addr = addr + bytes;
 			new_blk.block_check_word = gxDatabase::gxInternalCheckWord;
 
 			// Mark the block with a removed attribute 
@@ -1997,26 +1987,26 @@ FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
 			new_blk.block_length = unused_len;
 
 			// Update the file statistics header
-			file_stats_header.num_blocks++; // Another block has been allocated
-			file_stats_header.removed_blocks++;
+			++file_stats_header.num_blocks; // Another block has been allocated
+			++file_stats_header.removed_blocks;
 
 			if (WriteBlockHdr(new_blk, new_addr) != gxDBASE_NO_ERROR)
-				return (FAU_t)0;
-			if (prev_addr == (FAU_t)0) {
+				return static_cast<FAU_t>(0);
+			if (prev_addr == static_cast<FAU_t>(0)) {
 				// At the head of freespace
 				file_header.gxd_fs_fptr = new_addr;
 				// Update all headers
 				if (WriteFileHdr() != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 			}
 			else {
 				// In the middle of freespace
 				prev_blk.block_nd_fptr = new_addr;
 				if (WriteBlockHdr(prev_blk, prev_addr) != gxDBASE_NO_ERROR)
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				// Update the file stats header 
 				if (WriteFileStatsHdr(file_stats_header) != gxDBASE_NO_ERROR) {
-					return (FAU_t)0;
+					return static_cast<FAU_t>(0);
 				}
 			}
 			break;
@@ -2029,7 +2019,7 @@ FAU_t gxDatabase::ReclaimFirstFit(__ULWORD__ bytes)
 		SeekTo(addr);
 	} // End of block search
 
-	return (FAU_t)IsOK() ? (FAU_t)addr : (FAU_t)0;
+	return static_cast<FAU_t>(IsOK()) ? static_cast<FAU_t>(addr) : static_cast<FAU_t>(0);
 }
 
 // ==============================================================
@@ -2135,7 +2125,7 @@ FAU_t gxDatabase::FindFirstBlock(FAU_t offset)
 // and removed blocks.
 {
 	gxBlockHeader blk_hdr;
-	FAU_t file_address = (FAU_t)0;
+	FAU_t file_address = static_cast<FAU_t>(0);
 
 	// Ensure that the database header stays in sync
 	// during multiple file access
@@ -2143,7 +2133,7 @@ FAU_t gxDatabase::FindFirstBlock(FAU_t offset)
 
 	// No blocks have been allocated yet
 	if (file_header.gxd_hs_fptr == file_header.gxd_eof)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	if (!offset)
 		file_address = file_header.gxd_hs_fptr; // If no offset, start at heap
@@ -2151,15 +2141,15 @@ FAU_t gxDatabase::FindFirstBlock(FAU_t offset)
 		file_address = file_address + offset; // offset the starting address 
 
 		if (file_address >= file_header.gxd_eof) // Prevent offsetting past EOF
-			return (FAU_t)0; // Invalid address
+			return static_cast<FAU_t>(0); // Invalid address
 	}
 
-	while (1) {
-		if ((FAU_t)(file_address + BlockHeaderSize()) >= file_header.gxd_eof || !IsOK())
-			return (FAU_t)0;
+	while (true) {
+		if (static_cast<FAU_t>(file_address + BlockHeaderSize()) >= file_header.gxd_eof || !IsOK())
+			return static_cast<FAU_t>(0);
 
 		if (Read(&blk_hdr, sizeof(gxBlockHeader), file_address) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		if (!TestBlockHeader(blk_hdr)) {
 			file_address ++; // Find the next checkword
 		}
@@ -2180,17 +2170,17 @@ FAU_t gxDatabase::FindFirstObject(FAU_t offset)
 	gxBlockHeader blk_hdr;
 	FAU_t file_address = FindFirstBlock(offset);
 	if (!file_address)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
-	while (1) {
+	while (true) {
 		// Loop until a normal block status is found
 		if (ReadBlockHdr(blk_hdr, file_address) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
-		if ((__SBYTE__(blk_hdr.block_status & 0xff)) == gxNormalBlock)
+			return static_cast<FAU_t>(0);
+		if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) == gxNormalBlock)
 			break;
 		file_address = FindFirstBlock(file_address + blk_hdr.block_length);
 		if (!file_address)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 	}
 
 	return file_address + BlockHeaderSize();
@@ -2206,15 +2196,15 @@ FAU_t gxDatabase::FindNextBlock(FAU_t offset)
 
 	// No blocks have been allocated yet
 	if (file_header.gxd_hs_fptr == file_header.gxd_eof)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	FAU_t file_address = FindFirstBlock(offset);
 
 	if (!file_address)
-		return (FAU_t)0; // No Vaild block found
+		return static_cast<FAU_t>(0); // No Vaild block found
 
 	if (ReadBlockHdr(blk_hdr, file_address) != gxDBASE_NO_ERROR)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 	FAU_t next_blk = file_address + blk_hdr.block_length;
 
 	// This is last the blocks
@@ -2223,7 +2213,7 @@ FAU_t gxDatabase::FindNextBlock(FAU_t offset)
 
 	// Ensure block header is valid
 	if (ReadBlockHdr(blk_hdr, next_blk) != gxDBASE_NO_ERROR)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	return next_blk;
 }
@@ -2239,17 +2229,17 @@ FAU_t gxDatabase::FindNextObject(FAU_t offset)
 	gxBlockHeader blk_hdr;
 	FAU_t file_address = FindNextBlock(offset);
 	if (!file_address)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
-	while (1) {
+	while (true) {
 		// Loop until a normal block status is found
 		if (ReadBlockHdr(blk_hdr, file_address) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
-		if ((__SBYTE__(blk_hdr.block_status & 0xff)) == gxNormalBlock)
+			return static_cast<FAU_t>(0);
+		if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) == gxNormalBlock)
 			break;
 		file_address = FindNextBlock(file_address + blk_hdr.block_length);
 		if (!file_address)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 	}
 
 	return file_address + BlockHeaderSize();
@@ -2264,9 +2254,7 @@ FAU_t gxDatabase::FindPrevBlock(FAU_t offset)
 {
 	const FAU_t DEF_BUF_SIZE = 1000 * sizeof(FAU_t);
 	gxBlockHeader blk_hdr;
-	FAU_t file_address = (FAU_t)0;
-	FAU_t bufsize, rdsize;
-	char *buf;
+	FAU_t file_address = static_cast<FAU_t>(0);
 
 	// Ensure that the database header stays in sync
 	// during multiple file access.
@@ -2274,10 +2262,10 @@ FAU_t gxDatabase::FindPrevBlock(FAU_t offset)
 
 	// No blocks have been allocated yet
 	if (file_header.gxd_hs_fptr == file_header.gxd_eof)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
 	if (!offset)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 	else {
 		// offset the starting address 
 		file_address = ((file_address + offset) - BlockHeaderSize());
@@ -2286,41 +2274,41 @@ FAU_t gxDatabase::FindPrevBlock(FAU_t offset)
 		if ((file_address <= file_header.gxd_hs_fptr) || (file_address > file_header.gxd_eof))
 			return 0; // Invalid address
 	}
-	bufsize = file_address - file_header.gxd_hs_fptr;
+	FAU_t bufsize = file_address - file_header.gxd_hs_fptr;
 	if (bufsize == 0) {
-		file_address = FAU_t(file_header.gxd_hs_fptr + BlockHeaderSize());
+		file_address = static_cast<FAU_t>(file_header.gxd_hs_fptr + BlockHeaderSize());
 		return file_address;
 	}
 	if (bufsize > DEF_BUF_SIZE)
 		bufsize = DEF_BUF_SIZE;
 
-	buf = new char[(__ULWORD__)bufsize];
+	char *buf = new char[static_cast<__ULWORD__>(bufsize)];
 
-	while (1) {
+	while (true) {
 		if (!IsOK()) {
 			delete[] buf; // Prevent any memory leaks
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		}
-		rdsize = bufsize;
+		FAU_t rdsize = bufsize;
 		if ((file_address - rdsize) < file_header.gxd_hs_fptr) {
 			rdsize = file_address - file_header.gxd_hs_fptr;
 		}
-		if (rdsize < (FAU_t)sizeof(gxINT32)) {
+		if (rdsize < static_cast<FAU_t>(sizeof(gxINT32))) {
 			delete[] buf; // Prevent any memory leaks
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		}
 
 		file_address -= rdsize;
-		if (Read(buf, (__ULWORD__)rdsize, file_address) != gxDBASE_NO_ERROR) {
+		if (Read(buf, static_cast<__ULWORD__>(rdsize), file_address) != gxDBASE_NO_ERROR) {
 			delete[] buf; // Prevent any memory leaks
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 		}
 		for (FAU_t i = rdsize - sizeof(FAU_t); i >= 0; i--) {
-			if ((file_address + i == file_header.gxd_hs_fptr) || (*((gxUINT32 *)(buf + (FAU_t)i)) == gxDatabase::gxInternalCheckWord)) {
+			if ((file_address + i == file_header.gxd_hs_fptr) || (*reinterpret_cast<gxUINT32 *>(buf + static_cast<FAU_t>(i)) == gxDatabase::gxInternalCheckWord)) {
 				Read(&blk_hdr, sizeof(gxBlockHeader), file_address + i);
 				if (TestBlockHeader(blk_hdr)) {
 					// Found valid block
-					if ((__SBYTE__(blk_hdr.block_status & 0xff)) == gxNormalBlock) {
+					if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) == gxNormalBlock) {
 						delete[] buf; // Prevent any memory leaks
 						return file_address + i;
 					}
@@ -2340,17 +2328,17 @@ FAU_t gxDatabase::FindPrevObject(FAU_t offset)
 	gxBlockHeader blk_hdr;
 	FAU_t file_address = FindPrevBlock(offset);
 	if (!file_address)
-		return (FAU_t)0;
+		return static_cast<FAU_t>(0);
 
-	while (1) {
+	while (true) {
 		// Loop until a normal block status is found
 		if (ReadBlockHdr(blk_hdr, file_address) != gxDBASE_NO_ERROR)
-			return (FAU_t)0;
-		if ((__SBYTE__(blk_hdr.block_status & 0xff)) == gxNormalBlock)
+			return static_cast<FAU_t>(0);
+		if (static_cast<__SBYTE__>(blk_hdr.block_status & 0xff) == gxNormalBlock)
 			break;
 		file_address = FindPrevBlock(file_address + blk_hdr.block_length);
 		if (!file_address)
-			return (FAU_t)0;
+			return static_cast<FAU_t>(0);
 	}
 
 	return file_address + BlockHeaderSize();
@@ -2367,9 +2355,9 @@ void gxDatabase::InitFileLockHdr(gxFileLockHeader &hdr)
 // Initialize a the lock header for a newly 
 // constructed file lock header.
 {
-	hdr.file_lock_protect = (gxUINT32)0;
-	hdr.file_read_lock = (gxUINT32)0;
-	hdr.file_write_lock = (gxUINT32)0;
+	hdr.file_lock_protect = static_cast<gxUINT32>(0);
+	hdr.file_read_lock = static_cast<gxUINT32>(0);
+	hdr.file_write_lock = static_cast<gxUINT32>(0);
 }
 
 gxDatabaseError gxDatabase::WriteFileLockHdr(const gxFileLockHeader &hdr)
@@ -2446,7 +2434,7 @@ int gxDatabase::LockFile(gxDatabaseLockType l_type)
 
 	// Cannot modifiy this lock until the thread holding it releases the
 	// lock header.
-	if (lock_header.file_lock_protect != (gxUINT32)0) {
+	if (lock_header.file_lock_protect != static_cast<gxUINT32>(0)) {
 		gxd_error = gxDBASE_FILELOCK_ACCESS_ERROR;
 #ifdef __CPP_EXCEPTIONS__
     throw gxCDatabaseException();
@@ -2459,7 +2447,7 @@ int gxDatabase::LockFile(gxDatabaseLockType l_type)
 		case gxDBASE_WRITELOCK:
 			// Cannot obtain an exclusive lock until all the threads in the
 			// read lock queue have finished
-			if ((lock_header.file_read_lock != (gxUINT32)0) || (lock_header.file_write_lock != (gxUINT32)0)) {
+			if ((lock_header.file_read_lock != static_cast<gxUINT32>(0)) || (lock_header.file_write_lock != static_cast<gxUINT32>(0))) {
 				gxd_error = gxDBASE_FILELOCK_ERROR;
 #ifdef __CPP_EXCEPTIONS__
 	throw gxCDatabaseException();
@@ -2480,7 +2468,7 @@ int gxDatabase::LockFile(gxDatabaseLockType l_type)
 			if (Write(&lock_header.file_write_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.file_lock_protect = (gxUINT32)0;
+			lock_header.file_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.file_lock_protect, sizeof(gxUINT32), sizeof(gxFileHeader)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
@@ -2498,7 +2486,7 @@ int gxDatabase::LockFile(gxDatabaseLockType l_type)
 			}
 
 			if (lock_header.file_read_lock < 0xFFFFFFFF) {
-				lock_header.file_read_lock++;
+				++lock_header.file_read_lock;
 			}
 			else {
 				gxd_error = gxDBASE_FILELOCK_ERROR;
@@ -2516,7 +2504,7 @@ int gxDatabase::LockFile(gxDatabaseLockType l_type)
 			if (Write(&lock_header.file_read_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.file_lock_protect = (gxUINT32)0;
+			lock_header.file_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.file_lock_protect, sizeof(gxUINT32), sizeof(gxFileHeader)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
@@ -2561,7 +2549,7 @@ int gxDatabase::UnlockFile(gxDatabaseLockType l_type)
 
 	// Cannot modifiy this lock until the thread holding it releases the
 	// lock header.
-	if (lock_header.file_lock_protect != (gxUINT32)0) {
+	if (lock_header.file_lock_protect != static_cast<gxUINT32>(0)) {
 		gxd_error = gxDBASE_FILELOCK_ACCESS_ERROR;
 #ifdef __CPP_EXCEPTIONS__
     throw gxCDatabaseException();
@@ -2572,10 +2560,10 @@ int gxDatabase::UnlockFile(gxDatabaseLockType l_type)
 
 	switch (l_type) {
 		case gxDBASE_WRITELOCK:
-			if (lock_header.file_write_lock == (gxUINT32)0)
+			if (lock_header.file_write_lock == static_cast<gxUINT32>(0))
 				return gxDBASE_NO_ERROR;
 			else
-				lock_header.file_write_lock = (gxUINT32)0;
+				lock_header.file_write_lock = static_cast<gxUINT32>(0);
 
 			lock_header.file_lock_protect = 1;
 			if (Write(&lock_header.file_lock_protect, sizeof(gxUINT32), sizeof(gxFileHeader)) != gxDBASE_NO_ERROR)
@@ -2586,18 +2574,18 @@ int gxDatabase::UnlockFile(gxDatabaseLockType l_type)
 			if (Write(&lock_header.file_write_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.file_lock_protect = (gxUINT32)0;
+			lock_header.file_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.file_lock_protect, sizeof(gxUINT32), sizeof(gxFileHeader)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
 
 		case gxDBASE_READLOCK:
-			if (lock_header.file_read_lock == (gxUINT32)0) // This record is not locked
+			if (lock_header.file_read_lock == static_cast<gxUINT32>(0)) // This record is not locked
 				return gxd_error = gxDBASE_NO_ERROR;
-			else if (lock_header.file_read_lock > (gxUINT32)0) // Prevent read lock rollover
-				lock_header.file_read_lock--;
+			else if (lock_header.file_read_lock > static_cast<gxUINT32>(0)) // Prevent read lock rollover
+				--lock_header.file_read_lock;
 			else
-				lock_header.file_read_lock = (gxUINT32)0;
+				lock_header.file_read_lock = static_cast<gxUINT32>(0);
 
 			lock_header.file_lock_protect = 1;
 			if (Write(&lock_header.file_lock_protect, sizeof(gxUINT32), sizeof(gxFileHeader)) != gxDBASE_NO_ERROR)
@@ -2606,7 +2594,7 @@ int gxDatabase::UnlockFile(gxDatabaseLockType l_type)
 			if (Write(&lock_header.file_read_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.file_lock_protect = (gxUINT32)0;
+			lock_header.file_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.file_lock_protect, sizeof(gxUINT32), sizeof(gxFileHeader)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
@@ -2734,7 +2722,7 @@ int gxDatabase::LockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 
 	// Cannot modifiy this lock until the thread holding it releases the
 	// lock header.
-	if (lock_header.record_lock_protect != (gxUINT32)0) {
+	if (lock_header.record_lock_protect != static_cast<gxUINT32>(0)) {
 		gxd_error = gxDBASE_RECORDLOCK_ACCESS_ERROR;
 #ifdef __CPP_EXCEPTIONS__
     throw gxCDatabaseException();
@@ -2751,7 +2739,7 @@ int gxDatabase::LockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 		case gxDBASE_WRITELOCK:
 			// Cannot obtain an exclusive lock until all the threads in the
 			// read lock queue have finished
-			if (lock_header.record_read_lock != (gxUINT32)0) {
+			if (lock_header.record_read_lock != static_cast<gxUINT32>(0)) {
 				gxd_error = gxDBASE_RECORDLOCK_ERROR;
 #ifdef __CPP_EXCEPTIONS__
 	throw gxCDatabaseException();
@@ -2760,7 +2748,7 @@ int gxDatabase::LockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 #endif
 			}
 
-			if (lock_header.record_write_lock == (gxUINT32)0) {
+			if (lock_header.record_write_lock == static_cast<gxUINT32>(0)) {
 				lock_header.record_write_lock = 1;
 			}
 			else {
@@ -2781,7 +2769,7 @@ int gxDatabase::LockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 			if (Write(&lock_header.record_write_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.record_lock_protect = (gxUINT32)0;
+			lock_header.record_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.record_lock_protect, sizeof(gxUINT32), header_address) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
@@ -2799,7 +2787,7 @@ int gxDatabase::LockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 			}
 
 			if (lock_header.record_read_lock < 0xFFFFFFFF) {
-				lock_header.record_read_lock++;
+				++lock_header.record_read_lock;
 			}
 			else {
 				gxd_error = gxDBASE_RECORDLOCK_ERROR;
@@ -2817,7 +2805,7 @@ int gxDatabase::LockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 			if (Write(&lock_header.record_read_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.record_lock_protect = (gxUINT32)0;
+			lock_header.record_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.record_lock_protect, sizeof(gxUINT32), header_address) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
@@ -2858,7 +2846,7 @@ int gxDatabase::UnlockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 
 	// Cannot modifiy this lock until the thread holding it releases the
 	// lock header.
-	if (lock_header.record_lock_protect != (gxUINT32)0) {
+	if (lock_header.record_lock_protect != static_cast<gxUINT32>(0)) {
 		gxd_error = gxDBASE_RECORDLOCK_ACCESS_ERROR;
 #ifdef __CPP_EXCEPTIONS__
     throw gxCDatabaseException();
@@ -2873,10 +2861,10 @@ int gxDatabase::UnlockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 
 	switch (l_type) {
 		case gxDBASE_WRITELOCK:
-			if (lock_header.record_write_lock == (gxUINT32)0)
+			if (lock_header.record_write_lock == static_cast<gxUINT32>(0))
 				return gxDBASE_NO_ERROR;
 			else
-				lock_header.record_write_lock = (gxUINT32)0;
+				lock_header.record_write_lock = static_cast<gxUINT32>(0);
 
 			lock_header.record_lock_protect = 1;
 			if (Write(&lock_header.record_lock_protect, sizeof(gxUINT32), header_address) != gxDBASE_NO_ERROR)
@@ -2887,18 +2875,18 @@ int gxDatabase::UnlockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 			if (Write(&lock_header.record_write_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.record_lock_protect = (gxUINT32)0;
+			lock_header.record_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.record_lock_protect, sizeof(gxUINT32), header_address) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
 
 		case gxDBASE_READLOCK:
-			if (lock_header.record_read_lock == (gxUINT32)0) // This record is not locked
+			if (lock_header.record_read_lock == static_cast<gxUINT32>(0)) // This record is not locked
 				return gxd_error = gxDBASE_NO_ERROR;
-			else if (lock_header.record_read_lock > (gxUINT32)0) // Prevent read lock rollover
-				lock_header.record_read_lock--;
+			else if (lock_header.record_read_lock > static_cast<gxUINT32>(0)) // Prevent read lock rollover
+				--lock_header.record_read_lock;
 			else
-				lock_header.record_read_lock = (gxUINT32)0;
+				lock_header.record_read_lock = static_cast<gxUINT32>(0);
 
 			lock_header.record_lock_protect = 1;
 			if (Write(&lock_header.record_lock_protect, sizeof(gxUINT32), header_address) != gxDBASE_NO_ERROR)
@@ -2907,7 +2895,7 @@ int gxDatabase::UnlockRecord(gxDatabaseLockType l_type, FAU_t block_address)
 			if (Write(&lock_header.record_read_lock, sizeof(gxUINT32)) != gxDBASE_NO_ERROR)
 				return gxd_error;
 
-			lock_header.record_lock_protect = (gxUINT32)0;
+			lock_header.record_lock_protect = static_cast<gxUINT32>(0);
 			if (Write(&lock_header.record_lock_protect, sizeof(gxUINT32), header_address) != gxDBASE_NO_ERROR)
 				return gxd_error;
 			break;
@@ -2956,9 +2944,9 @@ void gxDatabase::InitFileStatsHdr(gxFileStatsHeader &hdr)
 // Initialize a the lock header for a newly 
 // constructed file lock header.
 {
-	hdr.num_blocks = (FAU)0;
-	hdr.deleted_blocks = (FAU)0;
-	hdr.removed_blocks = (FAU)0;
+	hdr.num_blocks = static_cast<FAU>(0);
+	hdr.deleted_blocks = static_cast<FAU>(0);
+	hdr.removed_blocks = static_cast<FAU>(0);
 }
 
 gxDatabaseError gxDatabase::WriteFileStatsHdr(const gxFileStatsHeader &hdr)

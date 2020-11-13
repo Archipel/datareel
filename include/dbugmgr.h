@@ -51,22 +51,21 @@ public: // Database debug functions
   FAU_t BlockSearch(FAU_t offset); 
 
 public: // Database debug utilities
-  int CheckFileSize(const char *fname);
+  int CheckFileSize(const char *fname) const;
   gxDatabaseError AnalyzeHeader(int test_ver = 1, int test_rev = 1);
-  gxDatabaseError AnalyzeHeader(const char *sig, int sig_len,
-				FAU ver, int test_ver, int test_rev);
+  gxDatabaseError AnalyzeHeader(const char *sig, int sig_len, const FAU &ver, int test_ver, int test_rev);
   int Rebuild(const char *fname, int update_ver = 0);
-  int Rebuild(const char *fname, FAU_t *num_objects, FAU ver, __SBYTE__ rev, 
+  int Rebuild(const char *fname, FAU_t *num_objects, const FAU &ver, __SBYTE__ rev, 
 	      FAU_t static_area, int copy_static_data);
   int Rebuild(const char *fname, FAU_t *num_objects, const char *sig, 
-	      int sig_len, FAU ver, __SBYTE__ rev, gxUINT32 check_word,
+	      int sig_len, const FAU &ver, __SBYTE__ rev, const gxUINT32 &check_word,
 	      FAU_t static_area, int copy_static_data);
   void SetLastKnownRev(__SBYTE__ last_rev) { rev_letter = last_rev; }
-  int VerifyBlockHeader(const gxBlockHeader &hdr);
-  int VerifyFileHeader(const gxFileHeader &fh);
-  int VerifyRevLetter(__SBYTE__ rev);
-  int VerifyVersion(long ver);
-  void ResetFileHeader(gxFileHeader &fh);
+  static int VerifyBlockHeader(const gxBlockHeader &hdr);
+  static int VerifyFileHeader(const gxFileHeader &fh);
+  static int VerifyRevLetter(__SBYTE__ rev);
+  static int VerifyVersion(long ver);
+  void ResetFileHeader(gxFileHeader &fh) const;
 
 public:
   gxString status_message;

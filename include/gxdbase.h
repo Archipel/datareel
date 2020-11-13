@@ -82,14 +82,11 @@ current stream pointer position in the open file.
 ==============================================================
 */
 // ----------------------------------------------------------- //  
-#ifndef __GX_DATABASE_HPP__
-#define __GX_DATABASE_HPP__
+#pragma once
 
-#include "gxdlcode.h"
-
-#include "gxcrc32.h"
-#include "gxdfptr.h"
 #include "gxderror.h"
+#include "gxdfptr.h"
+#include "gxdlcode.h"
 
 class GXDLCODE_API gxDatabase
 {
@@ -97,16 +94,15 @@ public:
   gxDatabase();
   virtual ~gxDatabase();
 
-private:
   // Disallow copying and assignment to prevent multiple copies of
   // database objects. Forcing pointer semantics to helps to ensure
   // the safe deletion or modification of a database object.
-  gxDatabase(const gxDatabase &ob) { }
-  void operator=(const gxDatabase &ob) { }
+  gxDatabase(const gxDatabase &) = delete;
+  void operator=(const gxDatabase &) = delete;
 
 public: // Database functions
   virtual gxDatabaseError Create(const char *fname, 
-				 FAU_t static_size = (FAU_t)0,
+				 FAU_t static_size = static_cast<FAU_t>(0),
 			 __SBYTE__ RevisionLetter = gxDatabaseRevisionLetter);
   virtual gxDatabaseError Create(gxdFPTR* fp, FAU_t staticSize = 0, __SBYTE__ revisionLetter = gxDatabaseRevisionLetter);
   virtual gxDatabaseError Create(FILE* fp, FAU_t staticSize = 0, __SBYTE__ revisionLetter = gxDatabaseRevisionLetter);
@@ -127,7 +123,7 @@ public: // Database functions
 		       gxDatabaseSeekMode mode = gxDBASE_SEEK_BEG);
   FAU_t SeekTo(FAU_t file_address);
   gxStreamPos FilePosition();
-  gxdFPTR *GetFP() { return fp; }
+  gxdFPTR *GetFP() const { return fp; }
   gxStreamPos Tell() { return FilePosition(); }
  
 public: // Allocation/De-allocation functions
@@ -175,22 +171,22 @@ public:  // Exception handling functions
     return gxd_error = err;
   }
   gxDatabaseError ResetDatabaseError() { return gxd_error = gxDBASE_NO_ERROR; }
-  const char *DatabaseExceptionMessage();
+  const char *DatabaseExceptionMessage() const;
 
 public: // Static file statistics
   const char *GetSignature() const;
   char *GetSignature();
   char GetRevLetter() { return rev_letter; }
-  const char GetRevLetter() const { return rev_letter; }
+  char GetRevLetter() const { return rev_letter; }
   FAU GetVersion() const { return file_header.gxd_ver; }
   FAU GetVersion() { return file_header.gxd_ver; }
-  const char *DatabaseName() const { return (const char *)file_name; }
+  const char *DatabaseName() const { return static_cast<const char *>(file_name); }
   char *DatabaseName() { return file_name; }
   FAU_t StaticArea();
     
 public: // Dynamic file statistics
   int TestFileHeader(); // Keeps database file header's dynamic data in sync
-  int TestBlockHeader(const gxBlockHeader &hdr); // Test for valid blocks
+  static int TestBlockHeader(const gxBlockHeader &hdr); // Test for valid blocks
   FAU GetDatabaseFreeSpace();
   FAU GetEOF();
   FAU GetHeapStart();
@@ -200,15 +196,15 @@ public: // Dynamic file statistics
   FAU_t DeletedBlocks(FAU_t *d, FAU_t *r);
   
   // 02/25/2002: Depreciated function include for backward compatibility only
-  FAU DeleteBlocks(FAU *d = 0, FAU *r = 0);
+  FAU DeleteBlocks(FAU *d = nullptr, FAU *r = nullptr);
   
 public: // Linear navigation methods
-  FAU_t FindFirstBlock(FAU_t offset = (FAU_t)0);  // Finds first block
+  FAU_t FindFirstBlock(FAU_t offset = static_cast<FAU_t>(0));  // Finds first block
   FAU_t FindPrevBlock(FAU_t offset);              // Finds previous block 
-  FAU_t FindNextBlock(FAU_t offset = (FAU_t)0);   // Finds next after first 
-  FAU_t FindFirstObject(FAU_t offset = (FAU_t)0); // Finds first object address
+  FAU_t FindNextBlock(FAU_t offset = static_cast<FAU_t>(0));   // Finds next after first 
+  FAU_t FindFirstObject(FAU_t offset = static_cast<FAU_t>(0)); // Finds first object address
   FAU_t FindPrevObject(FAU_t offset);             // Finds the previous object 
-  FAU_t FindNextObject(FAU_t offset = (FAU_t)0);  // Finds next after first 
+  FAU_t FindNextObject(FAU_t offset = static_cast<FAU_t>(0));  // Finds next after first 
   
 public: // General purpose file utilities
   static int Exists(const char *fname);
@@ -221,11 +217,11 @@ public: // 32-bit CRC checksum routines (revision A and higher)
   __ULWORD__ CalcChecksum(__ULWORD__ bytes, FAU_t file_address, 
 			  int mem_alloc = 1);
   gxUINT32 WriteObjectChecksum(FAU_t object_address);
-  int ReadObjectChecksum(FAU_t object_address, __ULWORD__ *object_crc = 0,
-			 __ULWORD__ *calc_crc = 0);
+  int ReadObjectChecksum(FAU_t object_address, __ULWORD__ *object_crc = nullptr,
+			 __ULWORD__ *calc_crc = nullptr);
 
 public: // File lock functions (revision B and higher)
-  void InitFileLockHdr(gxFileLockHeader &hdr);
+  static void InitFileLockHdr(gxFileLockHeader &hdr);
   gxDatabaseError ResetFileLock();
   gxDatabaseError WriteFileLockHdr(const gxFileLockHeader &hdr);
   gxDatabaseError ReadFileLockHdr(gxFileLockHeader &hdr);
@@ -233,7 +229,7 @@ public: // File lock functions (revision B and higher)
   int UnlockFile(gxDatabaseLockType l_type = gxDBASE_WRITELOCK);
 
 public: // Record lock functions (revision C and higher)
-  void InitRecordLockHdr(gxRecordLockHeader &hdr);
+  static void InitRecordLockHdr(gxRecordLockHeader &hdr);
   gxDatabaseError ResetRecordLock(FAU_t block_address = gxCurrAddress);
   gxDatabaseError ReadRecordLockHdr(gxRecordLockHeader &hdr, 
 				    FAU_t block_address = gxCurrAddress);
@@ -245,18 +241,18 @@ public: // Record lock functions (revision C and higher)
 		   FAU_t block_address = gxCurrAddress);
 
 protected:
-  char file_name[gxMaxNameLength];    // Open database file name
-  char rev_letter;                    // Database revision letter
+  char file_name[gxMaxNameLength]{};    // Open database file name
+  char rev_letter{};                    // Database revision letter
   gxFileHeader file_header;           // Database file header
-  gxdFPTR *fp;                        // Stream file handle
+  gxdFPTR *fp{};                        // Stream file handle
   gxDatabaseOperation last_operation; // Last I/O operation preformed
   gxDatabaseError gxd_error;          // Last reported file error
 
   // File status members
-  int is_ok;             // Used to signal a fatal error condition
-  int is_open;           // True if the file is open
-  int ready_for_reading; // True if the file is ready for reading
-  int ready_for_writing; // True if the file is ready for writing
+  int is_ok{};             // Used to signal a fatal error condition
+  int is_open{};           // True if the file is open
+  int ready_for_reading{}; // True if the file is ready for reading
+  int ready_for_writing{}; // True if the file is ready for writing
 
 public: // Static data members used in place of global variables
   static __SBYTE__ gxSignature[gxSignatureSize]; // Signature for database files
@@ -267,7 +263,7 @@ public: // Overloaded operators
   int operator!() const { return ((is_ok == 0) || (is_open == 0)); }
   int operator!() { return ((is_ok == 0) || (is_open == 0)); }
   operator const int () const { return ((is_ok == 1) && (is_open == 1)); }
-  operator int () { return ((is_ok == 1) && (is_open == 1)); }
+  operator int () const { return ((is_ok == 1) && (is_open == 1)); }
 
 protected: // Data members added to keep persistent stats
   gxFileStatsHeader file_stats_header; // Database file statistics
@@ -275,14 +271,8 @@ protected: // Data members added to keep persistent stats
 public: // Rev 'D' and higher file stat functions
   gxDatabaseError WriteFileStatsHdr(const gxFileStatsHeader &hdr);
   gxDatabaseError ReadFileStatsHdr(gxFileStatsHeader &hdr);
-  void InitFileStatsHdr(gxFileStatsHeader &hdr);
+  static void InitFileStatsHdr(gxFileStatsHeader &hdr);
 
 public: // Synchronization functions
   void Release();
 };
-
-#endif // __GX_DATABASE_HPP__
-// ----------------------------------------------------------- // 
-// ------------------------------- //
-// --------- End of File --------- //
-// ------------------------------- //

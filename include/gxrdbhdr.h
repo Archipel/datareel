@@ -39,20 +39,15 @@ records are created and loaded.
 ==============================================================
 */
 // ----------------------------------------------------------- //  
-#ifndef __GX_RDBMS_HEADERS_HPP__
-#define __GX_RDBMS_HEADERS_HPP__
+#pragma once
 
 // --------------------------------------------------------------
 // Include Files
 // --------------------------------------------------------------
 #include "gxdlcode.h"
-
-#include "pod.h"
 #include "gxstring.h"
 #include "membuf.h"
-#include "gxint16.h"
-#include "cdate.h"
-#include "gxfloat.h"
+#include "pod.h"
 // --------------------------------------------------------------
 
 // --------------------------------------------------------------
@@ -160,21 +155,23 @@ class GXDLCODE_API gxRDBMSHeader
 {
 public:
   gxRDBMSHeader();
-  ~gxRDBMSHeader() { }
   gxRDBMSHeader(const gxRDBMSHeader &ob) { Copy(ob); }
-  void operator=(const gxRDBMSHeader &ob) { Copy(ob); }
+  gxRDBMSHeader& operator=(const gxRDBMSHeader &ob) {  // NOLINT(bugprone-unhandled-self-assignment)
+	Copy(ob);
+    return *this;
+  }
 
 public:
-  const char *FileID() { return (const char *)file_id; }
+  const char *FileID() const { return static_cast<const char *>(file_id); }
   char RevLetter() { return file_id[gxrdFILE_ID_STR_LEN-1]; }
-  __ULWORD__ Version() { return (__ULWORD__)file_version; }
-  int TestHeader(const gxRDBMSHeader &ob);
-  int TestFileID(const gxRDBMSHeader &ob);
-  int TestVersion(const gxRDBMSHeader &ob);
+  __ULWORD__ Version() const { return static_cast<__ULWORD__>(file_version); }
+  int TestHeader(const gxRDBMSHeader &ob) const;
+  int TestFileID(const gxRDBMSHeader &ob) const;
+  int TestVersion(const gxRDBMSHeader &ob) const;
   int TestRevLetter(const gxRDBMSHeader &ob);
   void Copy(const gxRDBMSHeader &ob);
   void Clear();
-  __ULWORD__ SizeOf() { return (sizeof(file_id)+sizeof(file_version)); }
+  __ULWORD__ SizeOf() const { return (sizeof(file_id)+sizeof(file_version)); }
 
 private:
   char file_id[gxrdFILE_ID_STR_LEN];
@@ -184,24 +181,26 @@ private:
 struct GXDLCODE_API gxrdRecordHeader
 {
   gxrdRecordHeader() { Clear(); }
-  gxrdRecordHeader(const gxString &table_name, gxUINT32 nfields) {
+  gxrdRecordHeader(const gxString &table_name, const gxUINT32 &nfields) {
     SetTableID(table_name);
     num_fields = nfields;
   }
-  ~gxrdRecordHeader() { }
   gxrdRecordHeader(const gxrdRecordHeader &ob) { Clear(); Copy(ob);  }
-  void operator=(const gxrdRecordHeader &ob) { Copy(ob); }
+  gxrdRecordHeader& operator=(const gxrdRecordHeader &ob) {
+	Copy(ob);
+    return *this;
+  }
 
-  __ULWORD__ SizeOf() {
+  __ULWORD__ SizeOf() const {
     return (sizeof(table_id) + sizeof(num_fields));
   }
   void Clear() {
-    table_id = num_fields = (gxUINT32)0;
+    table_id = num_fields = static_cast<gxUINT32>(0);
   }
   void Copy(const gxrdRecordHeader &ob);
   void SetTableID(const gxString &table_name);
-  gxUINT32 GetCRC(const gxString &table_name);
-  int TestTableID(const gxString &table_name) {
+  gxUINT32 GetCRC(const gxString &table_name) const;
+  int TestTableID(const gxString &table_name) const {
     return table_id == GetCRC(table_name);
   }
 
@@ -212,20 +211,22 @@ struct GXDLCODE_API gxrdRecordHeader
 struct GXDLCODE_API gxrdTableHeaderField
 {
   gxrdTableHeaderField() { Clear(); }
-  ~gxrdTableHeaderField() { }
   gxrdTableHeaderField(const gxrdTableHeaderField &ob) { 
     Clear();
     Copy(ob); 
   }
-  void operator=(const gxrdTableHeaderField &ob) { Copy(ob); }
+  gxrdTableHeaderField& operator=(const gxrdTableHeaderField &ob) {  // NOLINT(bugprone-unhandled-self-assignment)
+	Copy(ob);
+  	return *this;
+  }
 
   void Clear();
   void Copy(const gxrdTableHeaderField &ob);
-  __ULWORD__ SizeOf();
+  __ULWORD__ SizeOf() const;
 
-  int VerifyFieldType();
-  int TestFieldType(const gxrdTableHeaderField &ob, int strict_test = 0);
-  int TestFieldVars(const gxrdTableHeaderField &ob);
+  int VerifyFieldType() const;
+  int TestFieldType(const gxrdTableHeaderField &ob, int strict_test = 0) const;
+  int TestFieldVars(const gxrdTableHeaderField &ob) const;
 
   // Persistent field information when printing or displaying a table
   char field_type_id;     // Data type for this field
@@ -241,28 +242,32 @@ struct GXDLCODE_API gxrdTableHeader
   gxrdTableHeader(__ULWORD__ nfields);
   ~gxrdTableHeader() { DestroyHeader(); }
   gxrdTableHeader(const gxrdTableHeader &ob);
-  void operator=(const gxrdTableHeader &ob) { Copy(ob); }
+  gxrdTableHeader& operator=(const gxrdTableHeader &ob) {
+    if(&ob != this) {
+  	  Copy(ob);
+    }
+  	return *this;
+  }
 
   void Copy(const gxrdTableHeader &ob); 
   void Clear();
-  __ULWORD__ SizeOf();
+  __ULWORD__ SizeOf() const;
   int AllocHeader(__ULWORD__ nfields);
   void DestroyHeader();
-  int GetField(gxrdTableHeaderField *fh, __ULWORD__ nfield);
-  int SetField(char field_type_id, char format_specifier, char *field_name, 
-	       gxUINT32 column_length, gxUINT32 array_length, 
-	       __ULWORD__ nfield);
+  int GetField(gxrdTableHeaderField *fh, __ULWORD__ nfield) const;
+  int SetField(char field_type_id, char format_specifier, char *field_name, const gxUINT32 &column_length, const gxUINT32 &array_length, 
+	       __ULWORD__ nfield) const;
   void SetTableName(const char *s);
   void SetKeyDef(const char *s);
   void SetFormDef(const char *s);
   void SetFKeyDef(const char *s);
-  int TestFieldTypes(const gxrdTableHeader &ob);
-  int VerifyFieldTypes();
-  int TestTableName(const gxrdTableHeader &ob);
-  int TestKeyDef(const gxrdTableHeader &ob);
-  int TestFormDef(const gxrdTableHeader &ob);
-  int TestFKeyDef(const gxrdTableHeader &ob);
-  int TestFieldVars(const gxrdTableHeader &ob);
+  int TestFieldTypes(const gxrdTableHeader &ob) const;
+  int VerifyFieldTypes() const;
+  int TestTableName(const gxrdTableHeader &ob) const;
+  int TestKeyDef(const gxrdTableHeader &ob) const;
+  int TestFormDef(const gxrdTableHeader &ob) const;
+  int TestFKeyDef(const gxrdTableHeader &ob) const;
+  int TestFieldVars(const gxrdTableHeader &ob) const;
   gxString TableDef() const;
 
   // Table infomation null terminated strings.
@@ -283,23 +288,24 @@ struct GXDLCODE_API gxrdTableHeader
 // to exclude record fields.
 struct GXDLCODE_API gxrdExcludeFields
 {
-  gxrdExcludeFields() { fields = 0; num_fields = 0; }
-  gxrdExcludeFields(gxUINT32 nfields) {
-    fields = 0; num_fields = 0;
+  gxrdExcludeFields() { fields = nullptr; num_fields = 0; }
+  gxrdExcludeFields(const gxUINT32 &nfields) {
+    fields = nullptr; num_fields = 0;
     SetNumFields(nfields);
   }
   ~gxrdExcludeFields() { Clear(); }
   gxrdExcludeFields(const gxrdExcludeFields &ob) {
-    fields = 0; num_fields = 0; Copy(ob);
+    fields = nullptr; num_fields = 0; Copy(ob);
   }
-  void operator=(const gxrdExcludeFields &ob) {
+  gxrdExcludeFields& operator=(const gxrdExcludeFields &ob) {
     if(this != &ob) Copy(ob);
+  	return *this;
   }
 
-  int Exclude(gxUINT32 field);
+  int Exclude(const gxUINT32 &field) const;
   void SetNumFields(gxUINT32 nfields);
   void Clear();
-  __ULWORD__ SizeOf();
+  __ULWORD__ SizeOf() const;
   void Copy(const gxrdExcludeFields &ob);
 
   gxUINT32 num_fields; // Number of field to exclude
@@ -309,45 +315,48 @@ struct GXDLCODE_API gxrdExcludeFields
 class GXDLCODE_API gxrdDatabaseRecord
 { 
 public:
-  gxrdDatabaseRecord(__ULWORD__ cmp_field = (__ULWORD__)-1, 
+  gxrdDatabaseRecord(__ULWORD__ cmp_field = static_cast<__ULWORD__>(-1), 
 		     int case_cmp = 1, int alpha_cmp = 0) { 
-    db_record = 0; num_fields = 0; Clear(); 
+    db_record = nullptr; num_fields = 0; Clear(); 
     compare_field = cmp_field; // Primary key 
     compare_case = case_cmp;   // Compare string case
     compare_alpha = alpha_cmp; // Perform alphanumeric compare
   }
   gxrdDatabaseRecord(const gxString &def, 
-		     __ULWORD__ cmp_field = (__ULWORD__)-1, 
+		     __ULWORD__ cmp_field = static_cast<__ULWORD__>(-1), 
 		     int case_cmp = 1, int alpha_cmp = 0) {
     // NOTE: Use this constructor with known good record definitions.
-    db_record = 0; num_fields = 0; Clear();
+    db_record = nullptr; num_fields = 0; Clear();
     CreateRecord(def, cmp_field, case_cmp, alpha_cmp);
   }
   ~gxrdDatabaseRecord() { DeleteArray(); }
   gxrdDatabaseRecord(const gxrdDatabaseRecord &ob) { 
-    db_record = 0; num_fields = 0; Clear();
+    db_record = nullptr; num_fields = 0; Clear();
     Copy(ob); 
   }
-  void operator=(const gxrdDatabaseRecord &ob) { Copy(ob); }
+  gxrdDatabaseRecord& operator=(const gxrdDatabaseRecord &ob) {  // NOLINT(bugprone-unhandled-self-assignment)
+	  Copy(ob);
+	  return *this;
+  }
 
 public: // Record functions
   gxDatabaseError SetField(const void *data, __ULWORD__ bytes, 
-			   __ULWORD__ col_number);
+			   __ULWORD__ col_number) const;
   gxDatabaseError GetField(void *data, __ULWORD__ bytes, 
-			   __ULWORD__ col_number);
-  void *GetField(__ULWORD__ col_number);
-  void *GetField(__ULWORD__ col_number, __ULWORD__ &bytes);
+			   __ULWORD__ col_number) const;
+  void *GetField(__ULWORD__ col_number) const;
+  void *GetField(__ULWORD__ col_number, __ULWORD__ &bytes) const;
   void *GetField(__ULWORD__ col_number, __ULWORD__ &bytes,
-		 gxDatabaseError &err);
+		 gxDatabaseError &err) const;
   gxDatabaseError FieldDiskOffset(__ULWORD__ &offset, 
-				  __ULWORD__ col_number);
+				  __ULWORD__ col_number) const;
   gxDatabaseError FieldDataDiskOffset(__ULWORD__ &offset, 
-				      __ULWORD__ col_number);
+				      __ULWORD__ col_number) const;
   gxDatabaseError CreateRecord(const gxString &def, int clear_rec = 1);
   gxDatabaseError CreateRecord(const gxString &def, __ULWORD__ cmp_field, 
 			       int case_cmp, int alpha_cmp);
-  gxDatabaseError CreateDiskRecord(MemoryBuffer &disk_record);
-  gxDatabaseError LoadDiskRecord(const MemoryBuffer &disk_record);
+  gxDatabaseError CreateDiskRecord(MemoryBuffer &disk_record) const;
+  gxDatabaseError LoadDiskRecord(const MemoryBuffer &disk_record) const;
  
   void Clear();
   void Copy(const gxrdDatabaseRecord &ob);
@@ -368,8 +377,9 @@ public: // Record functions
   int TestRecord(const gxrdDatabaseRecord &ob) const {
     return record_def == ob.record_def; 
   }
-  void GetRecordTypeSize(gxrdFIELD_TYPES type, __ULWORD__ &size,
-			 __ULWORD__ &overhead);
+
+  static void GetRecordTypeSize(gxrdFIELD_TYPES type, __ULWORD__ &size,
+                                __ULWORD__ &overhead);
 
   // NOTE: These functions will change default behavior of the 
   // overloaded comparison operators
@@ -381,12 +391,12 @@ public: // Record functions
   void ResetAlphaCompare() { compare_alpha = 0; }
 
 public: // Field functions
-  __ULWORD__ FieldLength(__ULWORD__ col_number);
-  int FieldType(__ULWORD__ col_number);
-  int FieldHasNull(__ULWORD__ col_number);
-  void *FieldData(__ULWORD__ col_number);
+  __ULWORD__ FieldLength(__ULWORD__ col_number) const;
+  int FieldType(__ULWORD__ col_number) const;
+  int FieldHasNull(__ULWORD__ col_number) const;
+  void *FieldData(__ULWORD__ col_number) const;
   void *FieldData(__ULWORD__ col_number, char &field_type_id,
-		  gxUINT32 &num_bytes);
+		  gxUINT32 &num_bytes) const;
 
 public: // Key functions
   gxrdKeyType_t CreateKey(__ULWORD__ field, int case_cmp) const;
@@ -441,10 +451,12 @@ public:
 class GXDLCODE_API gxrdDatabaseTable 
 {
 public:
-  gxrdDatabaseTable() { }
-  ~gxrdDatabaseTable () { }
+  gxrdDatabaseTable() = default;
   gxrdDatabaseTable(const gxrdDatabaseTable &ob) { Copy(ob); }
-  void operator=(const gxrdDatabaseTable &ob) { Copy(ob); }
+  gxrdDatabaseTable& operator=(const gxrdDatabaseTable &ob) {
+	Copy(ob);
+  	return *this;
+  }
 
 public:
   gxDatabaseError CreateTable(const gxString &tdef);
@@ -463,7 +475,6 @@ public:
 struct GXDLCODE_API gxrdDatabaseKey_t
 {
   gxrdDatabaseKey_t() { Clear(); }
-  ~gxrdDatabaseKey_t() { }
   gxrdDatabaseKey_t(const gxrdDatabaseKey_t &ob) { Clear(); Copy(ob); }
   gxrdDatabaseKey_t& operator=(const gxrdDatabaseKey_t &ob) {
     Copy(ob);
@@ -472,11 +483,11 @@ struct GXDLCODE_API gxrdDatabaseKey_t
 
   void Copy(const gxrdDatabaseKey_t &ob);
   void Clear() {
-    k = (gxrdKeyType_t)0;
-    tid = (gxrdTableID_t)0;
-    kid = (gxrdKeyID_t)0;
+    k = static_cast<gxrdKeyType_t>(0);
+    tid = static_cast<gxrdTableID_t>(0);
+    kid = static_cast<gxrdKeyID_t>(0);
   }
-  __ULWORD__ SizeOf() {
+  __ULWORD__ SizeOf() const {
     return (sizeof(k)+(sizeof(tid)+sizeof(kid)));
   }
 
@@ -495,14 +506,14 @@ struct GXDLCODE_API gxrdDatabaseKey_t
 class GXDLCODE_API gxrdDatabaseKey : public DatabaseKeyB
 {
 public:
-  gxrdDatabaseKey(int dup_names = 0) : DatabaseKeyB((char *)&key) {
-    key.kid = (gxrdKeyID_t)0;
-    key.tid = (gxrdTableID_t)0;
+  gxrdDatabaseKey(int dup_names = 0) : DatabaseKeyB(&key) {
+    key.kid = static_cast<gxrdKeyID_t>(0);
+    key.tid = static_cast<gxrdTableID_t>(0);
     allow_dup_names = dup_names;
   }
-  gxrdDatabaseKey(gxrdKeyType_t &k, gxrdKeyID_t kid = (gxrdKeyID_t)0, 
-		  gxrdTableID_t tid = (gxrdTableID_t)0, int dup_names = 0) : 
-    DatabaseKeyB((char *)&key) {
+  gxrdDatabaseKey(gxrdKeyType_t &k, gxrdKeyID_t kid = static_cast<gxrdKeyID_t>(0), 
+		  gxrdTableID_t tid = static_cast<gxrdTableID_t>(0), int dup_names = 0) : 
+    DatabaseKeyB(&key) {
     key.k = k;
     key.tid = tid;
     key.kid = kid;
@@ -514,9 +525,9 @@ public:
   }
 
 public: // Base class interface
-  size_t KeySize() { return sizeof(key); }
-  int operator==(const DatabaseKeyB& k) const;
-  int operator>(const DatabaseKeyB& k) const;
+  size_t KeySize() override { return sizeof(key); }
+  int operator==(const DatabaseKeyB& k) const override;
+  int operator>(const DatabaseKeyB& k) const override;
 
   // NOTE: This comparison function is only used if the 
   // __USE_SINGLE_COMPARE__ preprocessor directive is 
@@ -534,7 +545,7 @@ public:
   void AllowDuplicates() { allow_dup_names = 1; }
   void DisallowDuplicates() { allow_dup_names = 0; }
   void Copy(const gxrdDatabaseKey &ob);
-  __ULWORD__ SizeOf() { return key.SizeOf(); }
+  __ULWORD__ SizeOf() const { return key.SizeOf(); }
   void Clear() { key.Clear(); }
 
 private: // Non-persistent data members
@@ -550,13 +561,3 @@ private: // Persistent data members
 // --------------------------------------------------------------
 GXDLCODE_API const char *gxrdFieldTypeString(gxrdFIELD_TYPES t);
 // --------------------------------------------------------------
-
-#endif // __GX_RDBMS_HEADERS_HPP__
-// ----------------------------------------------------------- // 
-// ------------------------------- //
-// --------- End of File --------- //
-// ------------------------------- //
-
-
-
-

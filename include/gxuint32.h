@@ -34,11 +34,9 @@ values and reordering the bytes lowest-order to highest-order.
 An gxUINT32 type has a base 10 limit of 4,294,967,295.
 */
 // ----------------------------------------------------------- //   
-#ifndef __GX_UINT32_HPP__
-#define __GX_UINT32_HPP__
+#pragma once
 
 #include "gxdlcode.h"
-
 #include "gxdtypes.h"
 
 #if defined (__USE_NATIVE_INT_TYPES__)
@@ -51,7 +49,7 @@ public:
   gxUINT32(__ULWORD__ val = 0);
   gxUINT32(const gxUINT32& ob);
   gxUINT32& operator=(const gxUINT32& ob);
-  gxUINT32& operator=(const __ULWORD__ ob);
+  gxUINT32& operator=(__ULWORD__ ob);
 
 public:
   void UnPackBits(__ULWORD__ val);
@@ -70,44 +68,44 @@ public: // Arithmetic operators that modify their operand
   void operator*=(const gxUINT32 &i) { operator=(*this * i); }
   void operator/=(const gxUINT32 &i);
 
-  void operator+=(const __LWORD__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __LWORD__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __LWORD__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __LWORD__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __LWORD__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __LWORD__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __LWORD__ &i);
 
-  void operator+=(const __ULWORD__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __ULWORD__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __ULWORD__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __ULWORD__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __ULWORD__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __ULWORD__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __ULWORD__ &i);
 
-  void operator+=(const __WORD__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __WORD__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __WORD__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __WORD__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __WORD__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __WORD__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __WORD__ &i);
 
-  void operator+=(const __SWORD__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __SWORD__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __SWORD__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __SWORD__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __SWORD__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __SWORD__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __SWORD__ &i);
 
-  void operator+=(const __UWORD__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __UWORD__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __UWORD__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __UWORD__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __UWORD__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __UWORD__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __UWORD__ &i);
 
-  void operator+=(const __USWORD__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __USWORD__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __USWORD__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __USWORD__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __USWORD__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __USWORD__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __USWORD__ &i);
 
-  void operator+=(const __SBYTE__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __SBYTE__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __SBYTE__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __SBYTE__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __SBYTE__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __SBYTE__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __SBYTE__ &i);
 
-  void operator+=(const __UBYTE__ &i) { operator=(*this + (__ULWORD__)i); }
-  void operator-=(const __UBYTE__ &i) { operator=(*this - (__ULWORD__)i); }
-  void operator*=(const __UBYTE__ &i) { operator=(*this * (__ULWORD__)i); }
+  void operator+=(const __UBYTE__ &i) { operator=(*this + static_cast<__ULWORD__>(i)); }
+  void operator-=(const __UBYTE__ &i) { operator=(*this - static_cast<__ULWORD__>(i)); }
+  void operator*=(const __UBYTE__ &i) { operator=(*this * static_cast<__ULWORD__>(i)); }
   void operator/=(const __UBYTE__ &i);
 
 public: // Comparison operators
@@ -223,9 +221,3 @@ private:
   __UBYTE__ byte[4];
 };
 #endif // __USE_NATIVE_INT_TYPES__
-
-#endif // __GX_UINT32_HPP__
-// ----------------------------------------------------------- // 
-// ------------------------------- //
-// --------- End of File --------- //
-// ------------------------------- //

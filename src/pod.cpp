@@ -31,7 +31,6 @@ The POD (Persistent Object Database) manager is used to manage
 file pointers to database data files and index files.
 */
 // ----------------------------------------------------------- //   
-#include "gxdlcode.h"
 
 #include "pod.h"
 
@@ -46,7 +45,7 @@ PODIndexFile::PODIndexFile(unsigned num_indexes)
 
   // Clear the index file array
   unsigned i;
-  for(i = 0; i < POD_MAX_INDEX; i++) index_file[i] = 0;
+  for(i = 0; i < POD_MAX_INDEX; i++) index_file[i] = nullptr;
 
   n_indexes = num_indexes; 
   curr_index = 0;
@@ -64,9 +63,8 @@ PODIndexFile::PODIndexFile(unsigned num_indexes)
 
 PODIndexFile::~PODIndexFile()
 {
-  unsigned i;
-  // PC-lint 09/08/2005: Function may throw exception in destructor
-  for(i = 0; i < n_indexes; i++) delete index_file[i];
+	// PC-lint 09/08/2005: Function may throw exception in destructor
+  for(unsigned i = 0; i < n_indexes; i++) delete index_file[i];
 }
 
 gxDatabaseError PODIndexFile::Open(const char *ifname,
@@ -109,15 +107,15 @@ gxDatabaseError PODIndexFile::Close(unsigned index_number)
       return index_file[index_number]->btree->GetDatabaseError();
     }
     delete index_file[index_number]->btree;
-    index_file[index_number]->btree = 0;
+    index_file[index_number]->btree = nullptr;
   }
   return gxDBASE_NO_ERROR;
 }
 
 POD::POD()
 {
-  opendatafile = 0;
-  openindexfile = 0;
+  opendatafile = nullptr;
+  openindexfile = nullptr;
   exists = 0;
   using_index = 0;
 }
@@ -228,7 +226,7 @@ gxDatabaseError POD::Open(const char *dfname, PODIndexFile *ix_ptr,
 	}
       }
       delete openindexfile;
-      openindexfile = 0;
+      openindexfile = nullptr;
     }
     openindexfile = ix_ptr;
   }
@@ -249,7 +247,7 @@ gxDatabaseError POD::Open(const char *dfname, PODIndexFile *ix_ptr,
 	}
       }
       delete openindexfile;
-      openindexfile = 0;
+      openindexfile = nullptr;
     }
     openindexfile = ix_ptr;
   }
@@ -281,7 +279,7 @@ gxDatabaseError POD::Open(const char *dfname, char *ifname[POD_MAX_INDEX],
       }
     }
     delete openindexfile;
-    openindexfile = 0;
+    openindexfile = nullptr;
   }
   openindexfile = new PODIndexFile(num_indexes);
   if(!openindexfile) {  // Memory allocation error
@@ -312,7 +310,7 @@ gxDatabaseError POD::Open(const char *dfname, char *ifname[POD_MAX_INDEX],
     for(i = 0; i < num_indexes; i++) {
       // Overwrite all the index files since the index keys will
       // be useless without a valid data file.
-      if(CreateIndex((const char *)ifname[i], i, key_type, order, 
+      if(CreateIndex(static_cast<const char *>(ifname[i]), i, key_type, order, 
 		     num_trees, if_rev_letter) != gxDBASE_NO_ERROR) {
 	return GetIndexFileError();
       }
@@ -324,17 +322,17 @@ gxDatabaseError POD::Open(const char *dfname, char *ifname[POD_MAX_INDEX],
     }
     exists = 1;
     for(i = 0; i < num_indexes; i++) {
-      if(!gxDatabase::Exists((const char *)ifname[i])) {
+      if(!gxDatabase::Exists(static_cast<const char *>(ifname[i]))) {
 	// These index files will have to be rebuilt by the application
 	openindexfile->index_file[i]->rebuild_index = 1;
-	if(CreateIndex((const char *)ifname[i], i, key_type, order, 
+	if(CreateIndex(static_cast<const char *>(ifname[i]), i, key_type, order, 
 		       num_trees, if_rev_letter) != gxDBASE_NO_ERROR) {
 	  return GetIndexFileError();
 	}
 	
       }
       else {
-	if(OpenIndex((const char *)ifname[i], i, key_type, order, mode) !=
+	if(OpenIndex(static_cast<const char *>(ifname[i]), i, key_type, order, mode) !=
 	   gxDBASE_NO_ERROR) {
 	  return GetIndexFileError();
 	}
@@ -354,8 +352,8 @@ void POD::Release()
 #if defined (__PCLINT_CHECK__)
   return;
 #else 
-  opendatafile = 0;
-  openindexfile = 0;
+  opendatafile = nullptr;
+  openindexfile = nullptr;
 #endif
 }
 
@@ -375,7 +373,7 @@ gxDatabaseError POD::Close()
       }
     }
     delete openindexfile;
-    openindexfile = 0;
+    openindexfile = nullptr;
   }
   return gxDBASE_NO_ERROR;
 }
@@ -384,8 +382,7 @@ gxDatabaseError POD::Flush()
 // Function used to flush the data file and all the index files.
 // Returns a non-zero value if an error occurs.
 {
-  gxDatabaseError err = gxDBASE_NO_ERROR;
-  err = FlushDataFile();
+	gxDatabaseError err = FlushDataFile();
   if(!openindexfile) return err;
   for(unsigned i = 0; i < openindexfile->n_indexes; i++) {
     err = FlushIndexFile(i);
@@ -397,8 +394,7 @@ int POD::TestDatabase()
 // Function used to test the data file and all index files
 // during multiple file access.
 {
-  int err = 0;
-  err = TestDataFile();
+	int err = TestDataFile();
   if(!openindexfile) return err;
   for(unsigned i = 0; i < openindexfile->n_indexes; i++) {
     err = TestIndexFile(i);
@@ -466,7 +462,7 @@ void POD::ReleaseDataFile()
 #if defined (__PCLINT_CHECK__)
   return;
 #else 
-  opendatafile = 0;
+  opendatafile = nullptr;
 #endif
 }
 
@@ -478,7 +474,7 @@ gxDatabaseError POD::CloseDataFile()
       return GetDataFileError();
     }
     delete opendatafile;
-    opendatafile = 0;
+    opendatafile = nullptr;
   }
   return gxDBASE_NO_ERROR;
 }
@@ -493,7 +489,7 @@ void POD::ReleaseIndexFile()
 #if defined (__PCLINT_CHECK__)
   return;
 #else 
-  openindexfile = 0;
+  openindexfile = nullptr;
 #endif
 }
 
@@ -502,7 +498,6 @@ gxDatabaseError POD::CloseIndex(unsigned index_number)
 {
   // PC-lint 09/15/2005: Possible use of null pointer
   if(!openindexfile) return gxDBASE_NO_ERROR;
-  if(!openindexfile->index_file) return gxDBASE_NO_ERROR;
 
   gxBtree *btree = openindexfile->index_file[index_number]->btree;
  
@@ -511,13 +506,13 @@ gxDatabaseError POD::CloseIndex(unsigned index_number)
       return GetIndexFileError(index_number);
     }
     delete btree;
-    openindexfile->index_file[index_number]->btree = 0;
+    openindexfile->index_file[index_number]->btree = nullptr;
     openindexfile->index_file[index_number]->use_index = 0;
   }
   return gxDBASE_NO_ERROR;
 }
 
-gxDatabaseError POD::FlushDataFile() 
+gxDatabaseError POD::FlushDataFile() const
 // Function used to flush the open data file.
 { 
   if(!opendatafile) return gxDBASE_NO_ERROR;
@@ -531,7 +526,7 @@ gxDatabaseError POD::FlushIndexFile(unsigned index_number)
   return Index(index_number)->Flush();
 }
 
-int POD::TestDataFile() 
+int POD::TestDataFile() const
 // This function is used to ensure that the in memory copy
 // of the data file header and the disk copy stay in sync
 // during multiple file access.
@@ -555,7 +550,7 @@ gxDatabaseError POD::OpenDataFile(const char *fname, gxDatabaseAccessMode mode)
   }
   
   // PC-lint 09/15/2005: Possible memory leak
-  if(opendatafile) delete opendatafile;
+  delete opendatafile;
 
   opendatafile = new gxDatabase;
   if(!opendatafile) {
@@ -593,14 +588,6 @@ gxDatabaseError POD::OpenIndex(const char *fname, unsigned index_number,
     return gxDBASE_NULL_PTR;
 #endif
   }
-  if(!openindexfile->index_file) {
-#ifdef __CPP_EXCEPTIONS__
-    delete btree;
-    throw gxCDatabaseException();
-#else
-    return gxDBASE_NULL_PTR;
-#endif
-  }
 
   openindexfile->index_file[index_number]->btree = btree;
   return btree->Open(fname, mode);
@@ -612,7 +599,7 @@ gxDatabase *POD::IndexDBPtr(unsigned index_number)
 {
   gxBtree *btx = Index(index_number);
   if(btx) return btx->gxDatabasePtr();
-  return 0;
+  return nullptr;
 }
 
 gxDatabase *POD::IndexDBPtr(unsigned index_number) const
@@ -621,17 +608,15 @@ gxDatabase *POD::IndexDBPtr(unsigned index_number) const
 {
   gxBtree *btx = Index(index_number);
   if(btx) return btx->gxDatabasePtr();
-  return 0;
+  return nullptr;
 }
 
 gxBtree *POD::Index(unsigned index_number)
 // Returns a pointer to the Btree index file for the specified
 // index number.
 {
-  if(!openindexfile) return 0;
-  if(index_number > openindexfile->n_indexes) return 0;
-  // PC-lint 09/15/2005: Possible null pointer
-  if(!openindexfile->index_file) return 0;
+  if(!openindexfile) return nullptr;
+  if(index_number > openindexfile->n_indexes) return nullptr;
   return openindexfile->index_file[index_number]->btree;
 }
 
@@ -639,10 +624,8 @@ gxBtree *POD::Index(unsigned index_number) const
 // Returns a pointer to the Btree index file for the specified
 // index number.
 {
-  if(!openindexfile) return 0;
-  if(index_number > openindexfile->n_indexes) return 0;
-  // PC-lint 09/15/2005: Possible null pointer
-  if(!openindexfile->index_file) return 0;
+  if(!openindexfile) return nullptr;
+  if(index_number > openindexfile->n_indexes) return nullptr;
   return openindexfile->index_file[index_number]->btree;
 }
 
@@ -658,8 +641,7 @@ gxDatabaseError POD::GetDataFileError() const
   return opendatafile->GetDatabaseError();
 }
 
-gxDatabaseError POD::SetDataFileError(gxDatabaseError err)
-{
+gxDatabaseError POD::SetDataFileError(gxDatabaseError err) const {
   if(!opendatafile) return gxDBASE_NO_DATABASE_OPEN;
   return opendatafile->SetDatabaseError(err);
 }
@@ -695,8 +677,7 @@ gxDatabaseError POD::SetIndexFileError(gxDatabaseError err,
   return gxbtree->SetDatabaseError(err);
 }
 
-const char *POD::DataFileExceptionMessage()
-{
+const char *POD::DataFileExceptionMessage() const {
   if(!opendatafile) {
     return gxDatabaseExceptionMessage(gxDBASE_NO_DATABASE_OPEN);
   }

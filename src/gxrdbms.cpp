@@ -34,8 +34,12 @@ library gxDatabase, gxBtree, and gxStream classes.
 #include "gxdlcode.h"
 
 #include "gxrdbms.h"
+
+#include "cdate.h"
 #include "dbugmgr.h"
 #include "dfileb.h"
+#include "gxfloat.h"
+#include "gxint16.h"
 
 #ifdef __BCC32__
 #pragma warn -8057
@@ -45,9 +49,9 @@ library gxDatabase, gxBtree, and gxStream classes.
 gxRDBMS::gxRDBMS()
 {
   // Null all pointers
-  pod = 0;
-  sec_key_fields = 0; 
-  indexfile_names = 0;
+  pod = nullptr;
+  sec_key_fields = nullptr; 
+  indexfile_names = nullptr;
 
   num_sec_keys = dup = 0;
   compare_case = 1;   // Default string case compare
@@ -77,25 +81,23 @@ gxRDBMS::gxRDBMS()
 gxRDBMS::~gxRDBMS()
 {
   // PC-lint 09/08/2005: Function may throw exception in destructor
-  if(pod) delete pod;
-  pod = 0;
-  if(indexfile_names) delete[] indexfile_names;
-  indexfile_names = 0;
-  if(sec_key_fields) delete sec_key_fields; 
-  sec_key_fields = 0;
+  delete pod;
+  pod = nullptr;
+  delete[] indexfile_names;
+  indexfile_names = nullptr;
+  delete sec_key_fields; 
+  sec_key_fields = nullptr;
 }
 
 gxDatabaseError gxRDBMS::Write(gxrdDatabaseRecord *r, int flushdb, 
-			       int test_tree)
-{
+			       int test_tree) const {
   FAU_t block_address;
   return Write(r, block_address, flushdb, test_tree);
 }
 
 
 gxDatabaseError gxRDBMS::Write(gxrdDatabaseRecord *r, FAU_t &block_address,
-			       int flushdb, int test_tree)
-{
+			       int flushdb, int test_tree) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -119,7 +121,7 @@ gxDatabaseError gxRDBMS::Write(gxrdDatabaseRecord *r, FAU_t &block_address,
     pod->OpenDataFile()->Alloc(disk_record.length(), method);
 
   // Check for any allocation errors
-  if(record_address == (FAU_t)0) {
+  if(record_address == static_cast<FAU_t>(0)) {
     return pod->GetDataFileError();
   }
 
@@ -145,8 +147,7 @@ gxDatabaseError gxRDBMS::Write(gxrdDatabaseRecord *r, FAU_t &block_address,
 }
 
 gxDatabaseError gxRDBMS::Read(gxrdDatabaseRecord *r, gxBlockHeader &blk, 
-			      FAU_t block_address)
-{
+			      FAU_t block_address) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -209,8 +210,7 @@ gxDatabaseError gxRDBMS::Read(gxrdDatabaseRecord *r, gxBlockHeader &blk,
 }
 
 gxDatabaseError gxRDBMS::ReadBlockHeader(gxBlockHeader &blk, 
-					 FAU_t block_address)
-{
+					 FAU_t block_address) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -248,8 +248,7 @@ gxDatabaseError gxRDBMS::ReadBlockHeader(gxBlockHeader &blk,
   return pod->SetDataFileError(gxDBASE_NO_ERROR);
 }
 
-gxDatabaseError gxRDBMS::Read(gxrdDatabaseRecord *r, FAU_t block_address)
-{
+gxDatabaseError gxRDBMS::Read(gxrdDatabaseRecord *r, FAU_t block_address) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -265,8 +264,7 @@ gxDatabaseError gxRDBMS::Read(gxrdDatabaseRecord *r, FAU_t block_address)
   return Read(r, blk);
 }
 
-gxDatabaseError gxRDBMS::Close()
-{
+gxDatabaseError gxRDBMS::Close() const {
   gxDatabaseError err = gxDBASE_NO_ERROR;
   if(pod) {
     err = pod->Close();
@@ -357,7 +355,7 @@ gxDatabaseError gxRDBMS::create_or_open(int rewrite_header)
 
   if(pod) { // Close any open files
     delete pod; // Delete call will close any open files
-    pod = 0;
+    pod = nullptr;
   }
 
   pod = new POD;
@@ -465,77 +463,76 @@ gxDatabaseError gxRDBMS::create_or_open(int rewrite_header)
 }
 
 FAU_t gxRDBMS::Find(gxrdDatabaseRecord *r, __ULWORD__ field, int case_cmp,
-		    int alpha_cmp, int test_tree)
-{
-  if(IsClosed()) return FAU_t(0);
+		    int alpha_cmp, int test_tree) const {
+  if(IsClosed()) return static_cast<FAU_t>(0);
 
   // PC-lint 05/02/2005: Possible use of null pointer
-  if(!pod) return (FAU_t)0;
+  if(!pod) return static_cast<FAU_t>(0);
 
   if(!r) {
     pod->SetDataFileError(gxDBASE_NULL_PTR);
-    return FAU_t(0);
+    return static_cast<FAU_t>(0);
   }
 
-  gxDatabaseError err;
   if(table.record_def != r->RecordDef()) {
-    err = r->CreateRecord(table.record_def);
+    gxDatabaseError err = r->CreateRecord(table.record_def);
     if(err != gxDBASE_NO_ERROR) {
       pod->SetDataFileError(err);
-      return (FAU_t)0;
+      return static_cast<FAU_t>(0);
     }
   }
   
   // Search the index file for this entry
   if(UsingIndex()) {
     gxrdKeyType_t k = r->CreateKey(field, CaseCompare());
-    if(k == (gxrdKeyType_t)0) {
+    if(k == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetDataFileError(gxDBASE_BAD_KEY);
     }
     gxrdRecordHeader rh(table.table_name, r->NumFields());
     gxrdTableID_t tid = rh.table_id;
-    gxrdKeyID_t kid = (gxrdKeyID_t)0;
+    gxrdKeyID_t kid = static_cast<gxrdKeyID_t>(0);
     gxrdDatabaseKey key(k, kid, tid, dup);
     gxrdDatabaseKey compare_key;
     unsigned index_number = field;
-    if(index_number == (__ULWORD__)-1) index_number = 0;
-    if(index_number > (unsigned)num_trees) index_number = 0;
+    if(index_number == static_cast<__ULWORD__>(-1)) index_number = 0;
+    if(index_number > static_cast<unsigned>(num_trees)) index_number = 0;
     if(!FindKey(key, compare_key, index_number, test_tree)) {
-      return (FAU_t)0; // Could not find the key
+      return static_cast<FAU_t>(0); // Could not find the key
     }
     return key.KeyID(); // Found the index file entry
   }
 
   // If not using index file search the data file
+  // ReSharper disable once CppExpressionWithoutSideEffects
   if(test_tree) TestDatabase();
   gxBlockHeader blk;   // Block Header
   gxrdDatabaseRecord record(table.record_def);
   gxDatabase *f = pod->OpenDataFile();
 
   FAU_t gxdfileEOF = f->GetEOF();
-  FAU_t block_address = (FAU_t)0;
+  FAU_t block_address = static_cast<FAU_t>(0);
   block_address = f->FindFirstBlock(block_address); 
 
   // No database blocks found in file
-  if(block_address == (FAU_t)0) return (FAU_t)0; 
+  if(block_address == static_cast<FAU_t>(0)) return static_cast<FAU_t>(0); 
 
-  while(1) { 
-    if(FAU_t(block_address + f->BlockHeaderSize()) >= gxdfileEOF) 
+  while(true) { 
+    if(static_cast<FAU_t>(block_address + f->BlockHeaderSize()) >= gxdfileEOF) 
       break;
     if(ReadBlockHeader(blk, block_address) != gxDBASE_NO_ERROR) {
-      return (FAU_t)0;
+      return static_cast<FAU_t>(0);
     }
     if(f->TestBlockHeader(blk)) {
-      if((__SBYTE__)blk.block_status == gxNormalBlock) {
+      if(static_cast<__SBYTE__>(blk.block_status) == gxNormalBlock) {
 	Read(&record, blk);
 	if(pod->GetDataFileError() != gxDBASE_NO_ERROR) {
 	  if(pod->GetDataFileError() != gxDBASE_BAD_TABLE_ID) {
-	    return (FAU_t)0;
+	    return static_cast<FAU_t>(0);
 	  }
 	}
 	if(record.Compare(*r, field, case_cmp, alpha_cmp) == 0) {
 	  // Found unique data member
-	  if(field == (__ULWORD__)-1) return block_address;
+	  if(field == static_cast<__ULWORD__>(-1)) return block_address;
  	  *r = record; // Synchronize the records during partial finds
 	  return block_address;
 	}
@@ -549,12 +546,11 @@ FAU_t gxRDBMS::Find(gxrdDatabaseRecord *r, __ULWORD__ field, int case_cmp,
     }
   }
 
-  return (FAU_t)0;
+  return static_cast<FAU_t>(0);
 }
 
 int gxRDBMS::AddKey(DatabaseKeyB &key, DatabaseKeyB &compare_key,
-		    unsigned index_number, int flushdb)
-{
+		    unsigned index_number, int flushdb) const {
   if(IsClosed()) return 0;
 
   if(UsingIndex()) {
@@ -567,8 +563,7 @@ int gxRDBMS::AddKey(DatabaseKeyB &key, DatabaseKeyB &compare_key,
 }
 
 gxDatabaseError gxRDBMS::AddKey(gxrdDatabaseRecord *r, FAU block_address, 
-				int flushdb, int test_tree)
-{
+				int flushdb, int test_tree) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // Add the entry to the Index file
@@ -577,7 +572,7 @@ gxDatabaseError gxRDBMS::AddKey(gxrdDatabaseRecord *r, FAU block_address,
     // PC-lint 05/02/2005: Possible use of null pointer
     if(!pod) return gxDBASE_NULL_PTR;
 
-    int pk = 0;
+    int pk;
     if(primary_key == -1) {
       pk = -1;
     }
@@ -585,7 +580,7 @@ gxDatabaseError gxRDBMS::AddKey(gxrdDatabaseRecord *r, FAU block_address,
       pk = primary_key - 1;
     }
     gxrdKeyType_t k = r->CreateKey(pk, CaseCompare());
-    if(k == (gxrdKeyType_t)0) {
+    if(k == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetIndexFileError(gxDBASE_BAD_KEY);
     }
     gxrdRecordHeader rh(table.table_name, r->NumFields());
@@ -593,7 +588,6 @@ gxDatabaseError gxRDBMS::AddKey(gxrdDatabaseRecord *r, FAU block_address,
     gxrdKeyID_t kid = block_address;
     gxrdDatabaseKey key(k, kid, tid, dup);
     gxrdDatabaseKey compare_key;
-    int i;
 
     // Add the primary key
     if(!AddKey(key, compare_key, 0, flushdb)) {
@@ -602,12 +596,12 @@ gxDatabaseError gxRDBMS::AddKey(gxrdDatabaseRecord *r, FAU block_address,
     
     // Add any secondary keys
     if((num_sec_keys > 0) && (num_trees > 1)) {
-      for(i = 0; i < num_sec_keys; i++) {
+      for(int i = 0; i < num_sec_keys; i++) {
 	if(!sec_key_fields) {
 	  return pod->SetIndexFileError(gxDBASE_NULL_PTR, (i+1));
 	}
 	k = r->CreateKey((sec_key_fields[i]-1), CaseCompare());
-	if(k == (gxrdKeyType_t)0) {
+	if(k == static_cast<gxrdKeyType_t>(0)) {
 	  return pod->SetIndexFileError(gxDBASE_BAD_KEY, (i+1));
 	}
 	key.SetKey(k);
@@ -626,8 +620,7 @@ gxDatabaseError gxRDBMS::AddKey(gxrdDatabaseRecord *r, FAU block_address,
 }
 
 gxDatabaseError gxRDBMS::DeleteKey(gxrdDatabaseRecord *r, FAU &block_address, 
-				   int flushdb, int test_tree)
-{
+				   int flushdb, int test_tree) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -636,8 +629,7 @@ gxDatabaseError gxRDBMS::DeleteKey(gxrdDatabaseRecord *r, FAU &block_address,
   if(!r) return pod->SetDataFileError(gxDBASE_NULL_PTR);
 
   if(UsingIndex()) {
-    int pk = 0;
-    int i;
+    int pk;
     int found_primary = 0;
     if(primary_key == -1) {
       pk = -1;
@@ -646,7 +638,7 @@ gxDatabaseError gxRDBMS::DeleteKey(gxrdDatabaseRecord *r, FAU &block_address,
       pk = primary_key - 1;
     }
     gxrdKeyType_t k = r->CreateKey(pk, CaseCompare());
-    if(k == (gxrdKeyType_t)0) {
+    if(k == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetDataFileError(gxDBASE_BAD_KEY);
     }
     gxrdRecordHeader rh(table.table_name, r->NumFields());
@@ -669,12 +661,12 @@ gxDatabaseError gxRDBMS::DeleteKey(gxrdDatabaseRecord *r, FAU &block_address,
    
     // Delete any secondary keys
     if((num_sec_keys > 0) && (num_trees > 1)) {
-      for(i = 0; i < num_sec_keys; i++) {
+      for(int i = 0; i < num_sec_keys; i++) {
 	if(!sec_key_fields) {
 	  return pod->SetIndexFileError(gxDBASE_NULL_PTR, (i+1));
 	}
 	k = r->CreateKey((sec_key_fields[i]-1), CaseCompare());
-	if(k == (gxrdKeyType_t)0) {
+	if(k == static_cast<gxrdKeyType_t>(0)) {
 	  return pod->SetIndexFileError(gxDBASE_BAD_KEY, (i+1));
 	}
 	key.SetKey(k);
@@ -692,8 +684,7 @@ gxDatabaseError gxRDBMS::DeleteKey(gxrdDatabaseRecord *r, FAU &block_address,
 }
 
 int gxRDBMS::FindKey(DatabaseKeyB &key, DatabaseKeyB &compare_key,
-		     unsigned index_number, int test_tree)
-{
+		     unsigned index_number, int test_tree) const {
   if(IsClosed()) return 0;
 
   if(UsingIndex()) {
@@ -706,8 +697,7 @@ int gxRDBMS::FindKey(DatabaseKeyB &key, DatabaseKeyB &compare_key,
 }
 
 int gxRDBMS::DeleteKey(DatabaseKeyB &key, DatabaseKeyB &compare_key,
-		       unsigned index_number, int flushdb)
-{
+		       unsigned index_number, int flushdb) const {
   if(IsClosed()) return 0;
 
   if(UsingIndex()) {
@@ -719,21 +709,19 @@ int gxRDBMS::DeleteKey(DatabaseKeyB &key, DatabaseKeyB &compare_key,
   return 0;
 }
 
-FAU_t gxRDBMS::FindKey(gxrdDatabaseRecord *r, int test_tree)
-{
-  if(IsClosed()) return FAU_t(0);
+FAU_t gxRDBMS::FindKey(gxrdDatabaseRecord *r, int test_tree) const {
+  if(IsClosed()) return static_cast<FAU_t>(0);
 
   // PC-lint 05/02/2005: Possible use of null pointer
-  if(!pod) return (FAU_t)0;
+  if(!pod) return static_cast<FAU_t>(0);
 
   if(!r) {
     pod->SetDataFileError(gxDBASE_NULL_PTR);
-    return FAU_t(0);
+    return static_cast<FAU_t>(0);
   }
 
   // Check the primary key
-  int pk = 0;
-  int i;
+  int pk;
   if(primary_key == -1) {
     pk = -1;
   }
@@ -742,30 +730,29 @@ FAU_t gxRDBMS::FindKey(gxrdDatabaseRecord *r, int test_tree)
   }
   
   FAU_t block_address = Find(r, pk, compare_case, compare_alpha, test_tree);
-  if(block_address != (FAU_t)0) {
+  if(block_address != static_cast<FAU_t>(0)) {
     return block_address; // Found primary key
   }
 
   // Check all secondary keys
   if((num_sec_keys > 0) && (num_trees > 1)) {
-    for(i = 0; i < num_sec_keys; i++) {
+    for(int i = 0; i < num_sec_keys; i++) {
       if(!sec_key_fields) {
 	pod->SetIndexFileError(gxDBASE_NULL_PTR, (i+1));
-	return (FAU_t)0;
+	return static_cast<FAU_t>(0);
       }
       pod->SetIndexFileError(gxDBASE_NO_ERROR, i); // Reset previous error
       block_address = Find(r, (sec_key_fields[i]-1), 
 			   compare_case, compare_alpha, test_tree);
-      if(block_address != (FAU_t)0) {
+      if(block_address != static_cast<FAU_t>(0)) {
 	return block_address; // Found secondary key
        }
     }
   }
-  return (FAU_t)0; // Did not find any matching keys
+  return static_cast<FAU_t>(0); // Did not find any matching keys
 }
 
-int gxRDBMS::AddRecord(gxrdDatabaseRecord *r, int flushdb, int test_tree)
-{
+int gxRDBMS::AddRecord(gxrdDatabaseRecord *r, int flushdb, int test_tree) const {
   if(IsClosed()) return 0;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -777,7 +764,7 @@ int gxRDBMS::AddRecord(gxrdDatabaseRecord *r, int flushdb, int test_tree)
   }
 
   FAU_t block_address = FindKey(r, test_tree);
-  if(block_address != (FAU_t)0) {
+  if(block_address != static_cast<FAU_t>(0)) {
     pod->SetDataFileError(gxDBASE_RECORD_EXISTS);
     return 0;
   }
@@ -786,16 +773,14 @@ int gxRDBMS::AddRecord(gxrdDatabaseRecord *r, int flushdb, int test_tree)
 }
 
 int gxRDBMS::FindRecord(gxrdDatabaseRecord *r, 
-			int load_record, int test_tree)
-{
+			int load_record, int test_tree) const {
   FAU_t block_address;
   return FindRecord(r, block_address, load_record, test_tree);
 }
 
 int gxRDBMS::FindRecord(gxrdDatabaseRecord *r, FAU_t &block_address,
-			int load_record, int test_tree)
-{
-  block_address = (FAU_t)0; // Reset the block address
+			int load_record, int test_tree) const {
+  block_address = static_cast<FAU_t>(0); // Reset the block address
 
   if(IsClosed()) return 0;
 
@@ -808,7 +793,7 @@ int gxRDBMS::FindRecord(gxrdDatabaseRecord *r, FAU_t &block_address,
   }
 
   block_address = FindKey(r, test_tree);
-  if(block_address == (FAU_t)0) {
+  if(block_address == static_cast<FAU_t>(0)) {
     pod->SetDataFileError(gxDBASE_RECORD_NOT_FOUND);
     return 0;
   }
@@ -816,8 +801,7 @@ int gxRDBMS::FindRecord(gxrdDatabaseRecord *r, FAU_t &block_address,
   return 1;
 }
 
-int gxRDBMS::ReadRecord(gxrdDatabaseRecord *r, FAU_t block_address)
-{
+int gxRDBMS::ReadRecord(gxrdDatabaseRecord *r, FAU_t block_address) const {
   if(IsClosed()) return 0;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -833,8 +817,7 @@ int gxRDBMS::ReadRecord(gxrdDatabaseRecord *r, FAU_t block_address)
 }
 
 int gxRDBMS::DeleteRecord(gxrdDatabaseRecord *r, int flushdb,
-			  int test_tree)
-{
+			  int test_tree) const {
   if(IsClosed()) return 0;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -850,7 +833,7 @@ int gxRDBMS::DeleteRecord(gxrdDatabaseRecord *r, int flushdb,
   }
   gxDatabaseError err;
   gxDatabase *f = pod->OpenDataFile();
-  FAU block_address = (FAU_t)0;
+  FAU block_address = static_cast<FAU_t>(0);
   if(UsingIndex()) {
     if(num_trees == 1) { 
       // There are no secondary keys so delete the primary key and return
@@ -862,7 +845,7 @@ int gxRDBMS::DeleteRecord(gxrdDatabaseRecord *r, int flushdb,
     
     // Search all the indexes for the primary key  
     block_address = FindKey(r, test_tree);
-    if(block_address == (FAU_t)0) {
+    if(block_address == static_cast<FAU_t>(0)) {
       pod->SetDataFileError(gxDBASE_RECORD_NOT_FOUND);
       return 0;
     }
@@ -876,7 +859,7 @@ int gxRDBMS::DeleteRecord(gxrdDatabaseRecord *r, int flushdb,
     }
   }
   else { // Not using any indexes so search the data file
-    int pk = 0;
+    int pk;
     if(primary_key == -1) {
       pk = -1;
     }
@@ -884,7 +867,7 @@ int gxRDBMS::DeleteRecord(gxrdDatabaseRecord *r, int flushdb,
       pk = primary_key - 1;
     }
     block_address = Find(r, pk, compare_case, compare_alpha, test_tree);
-    if(block_address == (FAU_t)0) return 0; // Could not find data file entry
+    if(block_address == static_cast<FAU_t>(0)) return 0; // Could not find data file entry
     return f->Delete(block_address+f->BlockHeaderSize());
   }
 
@@ -921,8 +904,7 @@ gxDatabaseError gxRDBMS::ReadTableHeader(int test_db)
 
 gxDatabaseError gxRDBMS::ReadTableHeader(gxrdTableHeader &table_header,
 					 gxRDBMSHeader &file_id,
-					 int test_db)
-{
+					 int test_db) const {
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return gxDBASE_NULL_PTR;
 
@@ -931,8 +913,7 @@ gxDatabaseError gxRDBMS::ReadTableHeader(gxrdTableHeader &table_header,
 }
 
 gxDatabaseError gxRDBMS::WriteTableHeader(gxrdTableHeader &table_header, 
-					  int flushdb)
-{
+					  int flushdb) const {
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return gxDBASE_NULL_PTR;
 
@@ -946,7 +927,6 @@ gxDatabaseError gxRDBMS::ReadTableHeader(gxDatabase *f,
 {
   if(!f) return gxDBASE_NULL_PTR;
 
-  __ULWORD__ i;
   file_id.Clear();
   gxRDBMSHeader compare_file_id;
   gxINT32 num;
@@ -988,7 +968,7 @@ gxDatabaseError gxRDBMS::ReadTableHeader(gxDatabase *f,
   if(!table_header.AllocHeader(num)) {
     return f->SetDatabaseError(gxDBASE_MEM_ALLOC_ERROR);
   }
-  for(i = 0; i < table_header.num_fields; i++) {
+  for(__ULWORD__ i = 0; i < table_header.num_fields; i++) {
     f->Read(&table_header.fields[i], sizeof(gxrdTableHeaderField));
     if(f->GetDatabaseError() != gxDBASE_NO_ERROR) {
       return f->GetDatabaseError();
@@ -1010,7 +990,6 @@ gxDatabaseError gxRDBMS::WriteTableHeader(gxDatabase *f,
   if(!f) return gxDBASE_NULL_PTR;
 
   gxRDBMSHeader file_id;
-  __ULWORD__ i;
 
   f->Write(&file_id, file_id.SizeOf(), f->FileHeaderSize());
   if(f->GetDatabaseError() != gxDBASE_NO_ERROR) {
@@ -1036,7 +1015,7 @@ gxDatabaseError gxRDBMS::WriteTableHeader(gxDatabase *f,
   if(f->GetDatabaseError() != gxDBASE_NO_ERROR) {
     return f->GetDatabaseError();
   }
-  for(i = 0; i < table_header.num_fields; i++) {
+  for(__ULWORD__ i = 0; i < table_header.num_fields; i++) {
     f->Write(&table_header.fields[i], sizeof(gxrdTableHeaderField));
     if(f->GetDatabaseError() != gxDBASE_NO_ERROR) {
       return f->GetDatabaseError();
@@ -1082,8 +1061,8 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
 
   // Parse the record definition
   char words[MAXWORDS][MAXWORDLENGTH];
-  int num_words, parse_err;
-  parse_err = parse(kdef.c_str(), words, &num_words, ',');
+  int num_words;
+  int parse_err = parse(kdef.c_str(), words, &num_words, ',');
   if(parse_err != 0) {
     return gxDBASE_BAD_KEY_DEF;
   }
@@ -1092,34 +1071,33 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
   }
   
   gxString key_fields;
-  gxString sbuf;
-  int i, field_num, bt_node_order;
+  int i;
   int num_pri_keys = 0;
 
   // Allocate memory for the key fields array
-  if(sec_key_fields) delete sec_key_fields;
+  delete sec_key_fields;
   sec_key_fields = new int[record.NumFields()];
   if(!sec_key_fields) return gxDBASE_MEM_ALLOC_ERROR;
-  for(i = 0; i < (int)record.NumFields(); i++) {
+  for(i = 0; i < static_cast<int>(record.NumFields()); i++) {
     sec_key_fields[i] = 0;
   }
 
   for(i = 0; i < num_words; i++) {
     if(*words[i]) {
-      field_num = 0;
-      sbuf = words[i];
+      int field_num;
+      gxString sbuf = words[i];
       sbuf.TrimLeadingSpaces();
       sbuf.TrimTrailingSpaces();
       sbuf.ToUpper();
       if(sbuf.IFind("PRI") != -1) {
 	if(sbuf.IFind("COL") == -1) {
 	  delete[] sec_key_fields;
-	  sec_key_fields = 0;
+	  sec_key_fields = nullptr;
 	  return gxDBASE_BAD_KEY_DEF;
 	}
 	if(num_pri_keys > 1) {
 	  delete[] sec_key_fields;
-	  sec_key_fields = 0;
+	  sec_key_fields = nullptr;
 	  return gxDBASE_BAD_KEY_DEF;
 	}
 	sbuf.DeleteBeforeIncluding("COL");
@@ -1133,7 +1111,7 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
 	  field_num = sbuf.Atoi();
 	  if(field_num == 0) {
 	    delete[] sec_key_fields;
-	    sec_key_fields = 0;
+	    sec_key_fields = nullptr;
 	    return gxDBASE_BAD_KEY_DEF;
 	  }
 	  primary_key = field_num;
@@ -1143,7 +1121,7 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
       if(sbuf.IFind("SEC") != -1) {
 	if(sbuf.IFind("COL") == -1) {
 	  delete[] sec_key_fields;
-	  sec_key_fields = 0;
+	  sec_key_fields = nullptr;
 	  return gxDBASE_BAD_KEY_DEF;
 	}
 	sbuf.DeleteBeforeIncluding("COL");
@@ -1152,12 +1130,12 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
 	field_num = sbuf.Atoi();
 	if(field_num == 0) {
 	  delete[] sec_key_fields;
-	  sec_key_fields = 0;
+	  sec_key_fields = nullptr;
 	  return gxDBASE_BAD_KEY_DEF;
 	}
-	if(num_sec_keys > (int)record.NumFields()) {
+	if(num_sec_keys > static_cast<int>(record.NumFields())) {
 	  delete[] sec_key_fields;
-	  sec_key_fields = 0;
+	  sec_key_fields = nullptr;
 	  return gxDBASE_BAD_KEY_DEF;
 	}
 	sec_key_fields[num_sec_keys] = field_num;
@@ -1178,10 +1156,10 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
 	  sbuf.DeleteBeforeIncluding("=");
 	  sbuf.TrimLeadingSpaces();
 	  sbuf.TrimTrailingSpaces();
-	  bt_node_order = sbuf.Atoi();
+	  int bt_node_order = sbuf.Atoi();
 	  if(bt_node_order == 0) {
 	    delete[] sec_key_fields;
-	    sec_key_fields = 0;
+	    sec_key_fields = nullptr;
 	    return gxDBASE_BAD_KEY_DEF;
 	  }
 	  else {
@@ -1203,13 +1181,13 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
 	  }
 	  else {
 	    delete[] sec_key_fields;
-	    sec_key_fields = 0;
+	    sec_key_fields = nullptr;
 	    return gxDBASE_BAD_KEY_DEF;
 	  }
 	}
 	else {
 	  delete[] sec_key_fields;
-	  sec_key_fields = 0;
+	  sec_key_fields = nullptr;
 	  return gxDBASE_BAD_KEY_DEF;
 	}
       } 
@@ -1219,14 +1197,13 @@ gxDatabaseError gxRDBMS::DefineKeys(const gxString &kdef)
   return gxDBASE_NO_ERROR;
 }
 
-int gxRDBMS::delete_record(FAU_t &block_address, int flushdb, int test_tree)
-{
+int gxRDBMS::delete_record(FAU_t &block_address) const {
   if(IsClosed()) return 0;
 
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return 0;
 
-  if(block_address == (FAU_t)0) {
+  if(block_address == static_cast<FAU_t>(0)) {
     pod->SetDataFileError(gxDBASE_BAD_OBJECT_ADDRESS);
     return 0;
   }
@@ -1236,7 +1213,7 @@ int gxRDBMS::delete_record(FAU_t &block_address, int flushdb, int test_tree)
 
 
 int gxRDBMS::OverWriteRecord(gxrdDatabaseRecord *r, FAU_t &block_address,
-			     int flushdb, int test_tree)
+			     int flushdb, int test_tree) const
 // Overwrite the record at the specified record address. NOTE: This
 // function assumes that the record's primary or secondary key names
 // have not changed. Returns true if successful or false if an error 
@@ -1289,7 +1266,7 @@ int gxRDBMS::OverWriteRecord(gxrdDatabaseRecord *r, FAU_t &block_address,
     if(DeleteKey(&prev_record, ba, flushdb, test_tree) != gxDBASE_NO_ERROR) {
       return 0;
     }
-    if(!delete_record(block_address, flushdb, test_tree)) {
+    if(!delete_record(block_address)) {
       return 0;
     }
     if(Write(r, block_address, flushdb, test_tree) != gxDBASE_NO_ERROR) {
@@ -1319,8 +1296,7 @@ int gxRDBMS::OverWriteRecord(gxrdDatabaseRecord *r, FAU_t &block_address,
 gxDatabaseError gxRDBMS::change_or_add_record(gxrdDatabaseRecord *from, 
 					      gxrdDatabaseRecord *to,
 					      int add, FAU_t &block_address,
-					      int flushdb, int test_tree)
-{
+					      int flushdb, int test_tree) const {
   if(IsClosed()) return gxDBASE_FILE_NOT_OPEN_ERROR;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -1334,7 +1310,7 @@ gxDatabaseError gxRDBMS::change_or_add_record(gxrdDatabaseRecord *from,
     return pod->SetDataFileError(gxDBASE_BAD_RECORD);
   }
 
-  if(block_address == (FAU_t)0) {
+  if(block_address == static_cast<FAU_t>(0)) {
     if(!FindRecord(from, block_address, 1, test_tree)) {
       if(add) {
 	return Write(from, flushdb, test_tree);
@@ -1359,7 +1335,7 @@ gxDatabaseError gxRDBMS::change_or_add_record(gxrdDatabaseRecord *from,
     if(DeleteKey(from, ba, flushdb, test_tree) != gxDBASE_NO_ERROR) {
       return pod->GetDataFileError();
     }
-    if(!delete_record(block_address, flushdb, test_tree)) {
+    if(!delete_record(block_address)) {
       return pod->GetDataFileError();
     }
     if(Write(to, block_address, flushdb, test_tree) != gxDBASE_NO_ERROR) {
@@ -1381,7 +1357,7 @@ gxDatabaseError gxRDBMS::change_or_add_record(gxrdDatabaseRecord *from,
   }
 
   if(UsingIndex()) { // Test the entry key
-    int pk = 0;
+    int pk;
     if(primary_key == -1) {
       pk = -1;
     }
@@ -1389,11 +1365,11 @@ gxDatabaseError gxRDBMS::change_or_add_record(gxrdDatabaseRecord *from,
       pk = primary_key - 1;
     }
     gxrdKeyType_t ka = from->CreateKey(pk, CaseCompare());
-    if(ka == (gxrdKeyType_t)0) {
+    if(ka == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetDataFileError(gxDBASE_BAD_KEY);
     }
     gxrdKeyType_t kb = to->CreateKey(pk, CaseCompare());
-    if(kb == (gxrdKeyType_t)0) {
+    if(kb == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetDataFileError(gxDBASE_BAD_KEY);
     }
 
@@ -1413,7 +1389,7 @@ gxDatabaseError gxRDBMS::change_or_add_record(gxrdDatabaseRecord *from,
 }
 
 int gxRDBMS::ChangeRecord(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
-			  FAU_t &block_address, int flushdb, int test_tree)
+			  FAU_t &block_address, int flushdb, int test_tree) const
 // Public member function used to change this record. 
 // Returns true if successful or false if the record 
 // could not be changed.
@@ -1425,9 +1401,8 @@ int gxRDBMS::ChangeRecord(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
 }
 
 int gxRDBMS::ChangeRecord(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
-			  int flushdb, int test_tree)
-{
-  FAU_t block_address = (FAU_t)0;
+			  int flushdb, int test_tree) const {
+  FAU_t block_address = static_cast<FAU_t>(0);
   gxDatabaseError err = change_or_add_record(from, to, 0, block_address,
 					     flushdb, test_tree);
   if(err != gxDBASE_NO_ERROR) return 0;
@@ -1435,8 +1410,7 @@ int gxRDBMS::ChangeRecord(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
 }
 
 int gxRDBMS::ChangeOrAdd(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
-			 FAU_t &block_address, int flushdb, int test_tree)
-{
+			 FAU_t &block_address, int flushdb, int test_tree) const {
   gxDatabaseError err = change_or_add_record(from, to, 1, block_address,
 					     flushdb, test_tree);
   if(err != gxDBASE_NO_ERROR) return 0;
@@ -1444,9 +1418,8 @@ int gxRDBMS::ChangeOrAdd(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
 }
 
 int gxRDBMS::ChangeOrAdd(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
-			 int flushdb, int test_tree)
-{
-  FAU_t block_address = (FAU_t)0;
+			 int flushdb, int test_tree) const {
+  FAU_t block_address = static_cast<FAU_t>(0);
   gxDatabaseError err =  change_or_add_record(from, to, 1, block_address,
 					      flushdb, test_tree);
   if(err != gxDBASE_NO_ERROR) return 0;
@@ -1455,8 +1428,7 @@ int gxRDBMS::ChangeOrAdd(gxrdDatabaseRecord *from, gxrdDatabaseRecord *to,
 
 int gxRDBMS::ChangeRecordField(const void *data, __ULWORD__ bytes, 
 			       __ULWORD__ col_number, FAU_t &block_address, 
-			       int flushdb, int test_tree)
-{
+			       int flushdb, int test_tree) const {
   if(IsClosed()) return 0;
 
   // PC-lint 05/02/2005: Possible use of null pointer
@@ -1466,15 +1438,14 @@ int gxRDBMS::ChangeRecordField(const void *data, __ULWORD__ bytes,
     pod->SetDataFileError(gxDBASE_NULL_PTR);
     return 0;
   }
-  if(block_address == (FAU_t)0) {
+  if(block_address == static_cast<FAU_t>(0)) {
     pod->SetDataFileError(gxDBASE_RECORD_NOT_FOUND);
   }
 
   gxDatabase *f = pod->OpenDataFile();
-  gxDatabaseError err;
   gxrdDatabaseRecord record;
 
-  err = record.CreateRecord(table.record_def);
+  gxDatabaseError err = record.CreateRecord(table.record_def);
   if(err != gxDBASE_NO_ERROR) {
     return pod->SetDataFileError(err);
   }
@@ -1508,7 +1479,7 @@ int gxRDBMS::ChangeRecordField(const void *data, __ULWORD__ bytes,
     if(DeleteKey(&prev_record, ba, flushdb, test_tree) != gxDBASE_NO_ERROR) {
       return 0;
     }
-    if(!delete_record(block_address, flushdb, test_tree)) {
+    if(!delete_record(block_address)) {
       return 0;
     }
     if(Write(&record, block_address, flushdb, test_tree) != gxDBASE_NO_ERROR) {
@@ -1538,7 +1509,7 @@ int gxRDBMS::ChangeRecordField(const void *data, __ULWORD__ bytes,
   }
 
   if(UsingIndex()) { // Test the entry key
-    int pk = 0;
+    int pk;
     if(primary_key == -1) {
       pk = -1;
     }
@@ -1546,11 +1517,11 @@ int gxRDBMS::ChangeRecordField(const void *data, __ULWORD__ bytes,
       pk = primary_key - 1;
     }
     gxrdKeyType_t ka = record.CreateKey(pk, CaseCompare());
-    if(ka == (gxrdKeyType_t)0) {
+    if(ka == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetDataFileError(gxDBASE_BAD_KEY);
     }
     gxrdKeyType_t kb = prev_record.CreateKey(pk, CaseCompare());
-    if(kb == (gxrdKeyType_t)0) {
+    if(kb == static_cast<gxrdKeyType_t>(0)) {
       return pod->SetDataFileError(gxDBASE_BAD_KEY);
     }
 
@@ -1630,8 +1601,7 @@ gxDatabaseError gxRDBMS::gen_file_names()
   gxString index_file;
   datafile_name.Clear();
   index_file.Clear();
-  int i;
-  
+
   if(!db_dir.is_null()) {
 #if defined (__WIN32__)
     char path_sep = '\\';
@@ -1653,14 +1623,14 @@ gxDatabaseError gxRDBMS::gen_file_names()
   index_file << table.table_name.c_str();
   datafile_name << datafile_ext;
   index_file << indexfile_ext;
-  
-  if(indexfile_names) delete[] indexfile_names;
+
+  delete[] indexfile_names;
   indexfile_names = new gxString[num_trees];
   if(!indexfile_names) {
     return gxDBASE_MEM_ALLOC_ERROR;
   }
   if((num_sec_keys > 0) && (num_trees > 1)) {
-    for(i = 0; i < num_trees; i++) {
+    for(int i = 0; i < num_trees; i++) {
       indexfile_names[i].Clear();
       indexfile_names[i] << index_file << (i+1);
     }
@@ -1690,11 +1660,10 @@ gxDatabaseError gxRDBMS::init_table_header()
   return gxDBASE_NO_ERROR;
 }
 
-FAU_t gxRDBMS::HeaderSize()
-{
+FAU_t gxRDBMS::HeaderSize() const {
   gxRDBMSHeader file_id;
   FAU_t static_size = \
-    FAU_t(table.table_header.SizeOf() + file_id.SizeOf());
+    static_cast<FAU_t>(table.table_header.SizeOf() + file_id.SizeOf());
   return static_size;
 }
 
@@ -1713,13 +1682,12 @@ gxDatabaseError gxRDBMS::WriteAppSpace(const void *buf, __ULWORD__ bytes,
 gxDatabaseError gxRDBMS::WriteAppSpace(gxDatabase *f, 
 				       gxrdTableHeader &table_header,
 				       const void *buf, __ULWORD__ bytes,
-				       int flushdb)
-{
+				       int flushdb) const {
   if(!f) return gxDBASE_NULL_PTR;
   if(bytes > sizeof(table_header.app_space)) {
     return f->SetDatabaseError(gxDBASE_BUFFER_OVERFLOW);
   }
-  if((table_header.num_fields == ((__LWORD__)0)) || (!table_header.fields)) {
+  if((table_header.num_fields == static_cast<__LWORD__>(0)) || (!table_header.fields)) {
     return f->SetDatabaseError(gxDBASE_BAD_TABLE_HEADER);
   }
   if(table_header.num_fields != table.table_header.num_fields) {
@@ -1737,7 +1705,7 @@ gxDatabaseError gxRDBMS::WriteAppSpace(gxDatabase *f,
   offset += sizeof(table_header.form_def);
   offset += sizeof(table_header.fkey_def);
   offset += sizeof(table_header.num_fields);
-  offset += (FAU_t)table_header.num_fields * thd.SizeOf();
+  offset += static_cast<FAU_t>(table_header.num_fields) * thd.SizeOf();
   
   // Load the application data into the table header
   memmove(table_header.app_space, buf, bytes);
@@ -1762,15 +1730,14 @@ gxDatabaseError gxRDBMS::ReadAppSpace(void *buf, __ULWORD__ bytes,
 gxDatabaseError gxRDBMS::ReadAppSpace(gxDatabase *f, 
 				      gxrdTableHeader &table_header,
 				      void *buf, __ULWORD__ bytes,
-				      int test_db)
-{
+				      int test_db) const {
   if(!f) return gxDBASE_NULL_PTR;
   if(test_db) f->TestFileHeader();
 
   if(bytes > sizeof(table_header.app_space)) {
     return f->SetDatabaseError(gxDBASE_BUFFER_OVERFLOW);
   }
-  if((table_header.num_fields == ((__LWORD__)0)) || (!table_header.fields)) {
+  if((table_header.num_fields == static_cast<__LWORD__>(0)) || (!table_header.fields)) {
     return f->SetDatabaseError(gxDBASE_BAD_TABLE_HEADER);
   }
   if(table_header.num_fields != table.table_header.num_fields) {
@@ -1787,7 +1754,7 @@ gxDatabaseError gxRDBMS::ReadAppSpace(gxDatabase *f,
   offset += sizeof(table_header.form_def);
   offset += sizeof(table_header.fkey_def);
   offset += sizeof(table_header.num_fields);
-  offset += (FAU_t)table_header.num_fields * thd.SizeOf();
+  offset += static_cast<FAU_t>(table_header.num_fields) * thd.SizeOf();
 
   // Write the application space data
   return f->Read(buf, bytes, offset);
@@ -1992,7 +1959,7 @@ int gxRDBMS::VerifyDataFile(FAU_t &records, int auto_fix, int &rebuild_df,
   // stay in sync during multiple file access.
   pod->TestDataFile();
 
-  records = (FAU_t)0;
+  records = static_cast<FAU_t>(0);
   if(!futils_exists(DataFileName().c_str())) {
     // The database does not exist, so create the database and recreate
     // all associated index files.
@@ -2002,14 +1969,14 @@ int gxRDBMS::VerifyDataFile(FAU_t &records, int auto_fix, int &rebuild_df,
   gxrdDatabaseRecord compare_record(table.record_def);
   gxDatabase *f = pod->OpenDataFile();
   FAU_t gxdfileEOF = f->GetEOF();
-  FAU_t block_address = (FAU_t)0;
+  FAU_t block_address = static_cast<FAU_t>(0);
   gxBlockHeader blk;
   
   // Search for the first database block in the datafile
   block_address = f->FindFirstBlock(block_address); 
   
-  if(block_address == (FAU_t)0) { 
-    if(f->NormalBlocks() == (FAU_t)0) { // No blocks found
+  if(block_address == static_cast<FAU_t>(0)) { 
+    if(f->NormalBlocks() == static_cast<FAU_t>(0)) { // No blocks found
       // Both the data and index files are empty
       // Tell the caller that the data and index files are empty
       pod->SetDataFileError(gxDBASE_DATAFILE_EMPTY);
@@ -2023,14 +1990,14 @@ int gxRDBMS::VerifyDataFile(FAU_t &records, int auto_fix, int &rebuild_df,
   }
   
   // Walk through the data file to find all existing records
-  while(1) { 
-    if(FAU_t(block_address + f->BlockHeaderSize()) >= gxdfileEOF) 
+  while(true) { 
+    if(static_cast<FAU_t>(block_address + f->BlockHeaderSize()) >= gxdfileEOF) 
       break;
     if(ReadBlockHeader(blk, block_address) != gxDBASE_NO_ERROR) {
-      return (FAU_t)0;
+      return static_cast<FAU_t>(0);
     }
     if(f->TestBlockHeader(blk)) {
-      if((__SBYTE__)blk.block_status == gxNormalBlock) {
+      if(static_cast<__SBYTE__>(blk.block_status) == gxNormalBlock) {
 	if(Read(&record, blk) != gxDBASE_NO_ERROR) {
 	  if(pod->GetDataFileError() != gxDBASE_BAD_TABLE_ID) {
 	    // Found a bad record in the data file.
@@ -2101,7 +2068,7 @@ gxDatabaseError gxRDBMS::CheckIndex(__ULWORD__ index_number,
   rebuild = 0;
   if(mesg) mesg->Clear();
   
-  if(index_number > __ULWORD__(num_trees-1)) { // Stay in bounds
+  if(index_number > static_cast<__ULWORD__>(num_trees - 1)) { // Stay in bounds
     if(mesg) {
       *(mesg) << "Specified index number is out of range" 
 	      << "\n";
@@ -2150,7 +2117,7 @@ gxDatabaseError gxRDBMS::CheckIndex(__ULWORD__ index_number,
   
   // The static data area must be large enough to hold at 
   // least on B-tree header.
-  if(f.StaticArea() < FAU_t(sizeof(gxBtreeHeader))) {
+  if(f.StaticArea() < static_cast<FAU_t>(sizeof(gxBtreeHeader))) {
     if(mesg) {
       *(mesg) << "Static data area size mismatch" << "\n"
 	      << "Cannot read table header from file" << "\n";
@@ -2169,7 +2136,7 @@ gxDatabaseError gxRDBMS::CheckIndex(__ULWORD__ index_number,
     if(pod) pod->SetDataFileError(f.GetDatabaseError());
     return f.GetDatabaseError();
   }
-  if(hdr.num_trees > (BtreeSize_t)num_trees) {
+  if(hdr.num_trees > static_cast<BtreeSize_t>(num_trees)) {
     if(mesg) {
       *(mesg) << "Bad index file header" << "\n";
     }
@@ -2204,8 +2171,8 @@ gxDatabaseError gxRDBMS::CheckIndex(__ULWORD__ index_number,
   // Verify the B-tree consistency
   gxBtree *btx = GetDatabase()->Index(index_number);
   gxDatabase *f2 = pod->OpenDataFile();
-  if(btx->NumKeys() == (BtreeSize_t)0) {
-    if(f2->NormalBlocks() == (FAU_t)0) { // No blocks found
+  if(btx->NumKeys() == static_cast<BtreeSize_t>(0)) {
+    if(f2->NormalBlocks() == static_cast<FAU_t>(0)) { // No blocks found
       if(mesg) {
 	*(mesg) << "Database is empty" << "\n";
       }
@@ -2236,8 +2203,7 @@ int gxRDBMS::verify_record(gxrdDatabaseRecord &a, gxrdDatabaseRecord &b)
   if(a.RecordDef() != b.RecordDef()) return 0;
   if(a.TableName() != b.TableName()) return 0;
   if(a.NumFields() != b.NumFields()) return 0;
-  __ULWORD__ i;
-  for(i = 0; i < a.NumFields(); i++) {
+  for(__ULWORD__ i = 0; i < a.NumFields(); i++) {
     // Test the field types. NOTE: The number of byte used
     // for the field data may vary so the number of bytes
     // and field data cannot be tested here.
@@ -2246,7 +2212,7 @@ int gxRDBMS::verify_record(gxrdDatabaseRecord &a, gxrdDatabaseRecord &b)
   return 1;
 }
 
-int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys)
+int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys) const
 // Compares the data file to the index file.
 // Returns true if data and index file match.
 {
@@ -2255,7 +2221,7 @@ int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys)
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return 0;
 
-  if(index_number > __ULWORD__(num_trees-1)) { // Stay in bounds
+  if(index_number > static_cast<__ULWORD__>(num_trees - 1)) { // Stay in bounds
     pod->SetDataFileError(gxDBASE_BAD_INDEX_NUMBER);
     return 0;
   }
@@ -2271,7 +2237,7 @@ int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys)
   gxBtree *btx = GetDatabase()->Index(index_number);
   gxDatabase *f = pod->OpenDataFile();
   BtreeNode curr_node(btx->KeySize(), btx->NodeOrder());
-  keys = (FAU_t)0; // Application key count
+  keys = static_cast<FAU_t>(0); // Application key count
 
   // Walk through the tree starting at the first key
   if(btx->FindFirst(key)) {
@@ -2297,8 +2263,8 @@ int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys)
     if(keys != f->NormalBlocks()) return 0;
   }
   else { // No keys found so test the data file
-    if(btx->NumKeys() == (BtreeSize_t)0) {
-      if(f->NormalBlocks() == (FAU_t)0) { // No blocks found
+    if(btx->NumKeys() == static_cast<BtreeSize_t>(0)) {
+      if(f->NormalBlocks() == static_cast<FAU_t>(0)) { // No blocks found
 	// Both the data and index files are empty
 	// Tell the caller that the data and index files are empty
 	pod->SetDataFileError(gxDBASE_DATAFILE_EMPTY);
@@ -2315,7 +2281,7 @@ int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys)
       // key where found.
       pod->SetIndexFileError(gxDBASE_BAD_INDEX_FILE, index_number);
       
-      if(f->NormalBlocks() == (FAU_t)0) { // No blocks found
+      if(f->NormalBlocks() == static_cast<FAU_t>(0)) { // No blocks found
 	// Signal to the caller that the data file may be bad as well
 	// since no records were found.
 	pod->SetDataFileError(gxDBASE_BAD_DATAFILE);
@@ -2327,13 +2293,12 @@ int gxRDBMS::VerifyIndex(__ULWORD__ index_number, FAU_t &keys)
   return 1; // Compare passed
 }
 
-gxDatabaseError gxRDBMS::insert_key(gxrdDatabaseRecord *r, FAU block_address, 
-				    __ULWORD__ index_number)
-{
+gxDatabaseError gxRDBMS::insert_key(gxrdDatabaseRecord *r, const FAU &block_address, 
+				    __ULWORD__ index_number) const {
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return gxDBASE_NULL_PTR;
 
-  int pk = 0;
+  int pk;
   if(primary_key == -1) {
     pk = -1;
   }
@@ -2343,7 +2308,7 @@ gxDatabaseError gxRDBMS::insert_key(gxrdDatabaseRecord *r, FAU block_address,
   
   gxrdKeyType_t k = r->CreateKey(pk, CaseCompare());
   
-  if(k == (gxrdKeyType_t)0) {
+  if(k == static_cast<gxrdKeyType_t>(0)) {
     return pod->SetIndexFileError(gxDBASE_BAD_KEY);
   }
   gxrdRecordHeader rh(table.table_name, r->NumFields());
@@ -2415,14 +2380,13 @@ int gxRDBMS::RebuildIndex(__ULWORD__ index_number, BtreeNodeOrder_t no,
 
 int gxRDBMS::rebuild_index(__ULWORD__ index_number, BtreeNodeOrder_t no, 
 			   int ntrees, __SBYTE__ rev, 
-			   FAU_t &records, FAU_t &keys)
-{
+			   FAU_t &records, FAU_t &keys) const {
   if(IsClosed()) return 0;
 
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return 0;
 
-  if(index_number > __ULWORD__(num_trees-1)) { // Stay in bounds
+  if(index_number > static_cast<__ULWORD__>(num_trees - 1)) { // Stay in bounds
     pod->SetDataFileError(gxDBASE_BAD_INDEX_NUMBER);
     return 0;
   }
@@ -2451,16 +2415,16 @@ int gxRDBMS::rebuild_index(__ULWORD__ index_number, BtreeNodeOrder_t no,
   gxrdDatabaseRecord record(table.record_def);
   gxrdDatabaseKey key, compare_key;
   FAU_t gxdfileEOF = f->GetEOF();
-  FAU_t block_address = (FAU_t)0;
+  FAU_t block_address = static_cast<FAU_t>(0);
   gxBlockHeader blk;
-  keys = (FAU_t)0;
-  records = (FAU_t)0;
+  keys = static_cast<FAU_t>(0);
+  records = static_cast<FAU_t>(0);
 
   // Search for the first database block in the datafile
   block_address = f->FindFirstBlock(block_address); 
 
-  if(block_address == (FAU_t)0) { 
-    if(f->NormalBlocks() == (FAU_t)0) { // No blocks found
+  if(block_address == static_cast<FAU_t>(0)) { 
+    if(f->NormalBlocks() == static_cast<FAU_t>(0)) { // No blocks found
       // Both the data and index files are empty
       // Tell the caller that the data and index files are empty
       pod->SetDataFileError(gxDBASE_DATAFILE_EMPTY);
@@ -2475,14 +2439,14 @@ int gxRDBMS::rebuild_index(__ULWORD__ index_number, BtreeNodeOrder_t no,
   }
 
   // Walk through the data file to find all existing records
-  while(1) { 
-    if(FAU_t(block_address + f->BlockHeaderSize()) >= gxdfileEOF) 
+  while(true) { 
+    if(static_cast<FAU_t>(block_address + f->BlockHeaderSize()) >= gxdfileEOF) 
       break;
     if(ReadBlockHeader(blk, block_address) != gxDBASE_NO_ERROR) {
-      return (FAU_t)0;
+      return static_cast<FAU_t>(0);
     }
     if(f->TestBlockHeader(blk)) {
-      if((__SBYTE__)blk.block_status == gxNormalBlock) {
+      if(static_cast<__SBYTE__>(blk.block_status) == gxNormalBlock) {
 	if(Read(&record, blk) != gxDBASE_NO_ERROR) {
 	  if(pod->GetDataFileError() != gxDBASE_BAD_TABLE_ID) {
 	    return -4;
@@ -2521,24 +2485,14 @@ int gxRDBMS::rebuild_index(__ULWORD__ index_number, BtreeNodeOrder_t no,
 
 int gxRDBMS::RebuildDataFile(FAU_t &records, const char *tempfile)
 {
-  return RebuildDataFile(df_rev_letter, HeaderSize(), 0, 
-			 records, tempfile);
+  return RebuildDataFile(df_rev_letter, HeaderSize(), records, 
+                         tempfile);
 }
 
-int gxRDBMS::RebuildDataFile(int copy_static_data, FAU_t &records, 
-			     const char *tempfile)
+int gxRDBMS::RebuildDataFile(__SBYTE__ rev, FAU_t static_area, FAU_t &records, const char *tempfile)
 {
-  return RebuildDataFile(df_rev_letter, HeaderSize(), copy_static_data, 
-			 records, tempfile);
-}
-
-
-int gxRDBMS::RebuildDataFile(__SBYTE__ rev, FAU_t static_area, 
-			     int copy_static_data,
-			     FAU_t &records, const char *tempfile)
-{
-  int rv = rebuild_data_file(rev, static_area, copy_static_data,
-			     records, tempfile);
+  int rv = rebuild_data_file(rev, static_area, records,
+                             tempfile);
   int reconnect = 0;
   if(rv != 1) {
     switch(rv) {
@@ -2590,9 +2544,7 @@ int gxRDBMS::RebuildDataFile(__SBYTE__ rev, FAU_t static_area,
   return (rv == 1);
 }
 
-int gxRDBMS::rebuild_data_file(__SBYTE__ rev, FAU_t static_area, 
-			       int copy_static_data,
-			       FAU_t &records, const char *tempfile)
+int gxRDBMS::rebuild_data_file(__SBYTE__ rev, FAU_t static_area, FAU_t &records, const char *tempfile)
 
 {
   // Set the temp file name
@@ -2717,9 +2669,9 @@ void gxRDBMS::Release()
 #if defined(__PCLINT_CHECK__)
   return;
 #else
-  pod = 0;
-  sec_key_fields = 0;
-  indexfile_names = 0;
+  pod = nullptr;
+  sec_key_fields = nullptr;
+  indexfile_names = nullptr;
 #endif
 }
 // --------------------------------------------------------------
@@ -2754,7 +2706,7 @@ gxDatabaseError gxRDBMS::SortOrderList(
 				       __ULWORD__ key_number,
 				       int case_cmp, int alpha_cmp, 
 				       FAU_t list_limit, FAU_t list_start, 
-				       FAU_t list_end)
+				       FAU_t list_end) const
 // Function used to build a sort ordered list. Returns gxDBASE_NO_ERROR if
 // no errors occur. 
 {
@@ -2767,13 +2719,13 @@ gxDatabaseError gxRDBMS::SortOrderList(
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return gxDBASE_NULL_PTR;
 
-  if(index_number > __ULWORD__(NumTrees()-1)) {
+  if(index_number > static_cast<__ULWORD__>(NumTrees() - 1)) {
     return pod->SetDataFileError(gxDBASE_BAD_INDEX_NUMBER);
   }
 
   // Test the range limits
   FAU_t num_records = pod->OpenDataFile()->NormalBlocks();
-  if(num_records == (FAU_t)0) return gxDBASE_NO_ERROR;
+  if(num_records == static_cast<FAU_t>(0)) return gxDBASE_NO_ERROR;
 
   if((list_start > num_records) || (list_end > num_records)) {
     return pod->SetDataFileError(gxDBASE_BAD_RANGE_LIMIT);
@@ -2789,12 +2741,12 @@ gxDatabaseError gxRDBMS::SortOrderList(
   gxBtree *btx = GetDatabase()->Index(index_number);
   gxrdDatabaseRecord record, compare_record;
   gxDatabaseError err;
-  FAU_t record_count = (FAU_t)0;
-  FAU_t key_count = (FAU_t)0;
+  FAU_t record_count = static_cast<FAU_t>(0);
+  FAU_t key_count = static_cast<FAU_t>(0);
   int exists;
   __ULWORD__ field = 0;
-  if(key_number == (__ULWORD__)-1) {
-    field = (__ULWORD__)-1;
+  if(key_number == static_cast<__ULWORD__>(-1)) {
+    field = static_cast<__ULWORD__>(-1);
   }
   else {
     field = key_number - 1;
@@ -2818,7 +2770,7 @@ gxDatabaseError gxRDBMS::SortOrderList(
 
   // Walk through the tree starting at the first key
   if(btx->FindFirst(key)) {
-    if((list_start == (FAU_t)0) || (list_start == (FAU_t)1)) {
+    if((list_start == static_cast<FAU_t>(0)) || (list_start == static_cast<FAU_t>(1))) {
       if(!ReadRecord(&record, key.KeyID())) {
 	err = GetDatabase()->GetDataFileError();
 	if(err != gxDBASE_NO_ERROR) {
@@ -2871,8 +2823,7 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
 				__ULWORD__ index_number,
 				__ULWORD__ search_field,
 				int case_cmp, int alpha_cmp, 
-				int find_all_matches, FAU_t list_limit)
-{
+				int find_all_matches, FAU_t list_limit) const {
   gxString sbuf;
   virtual_list.Clear(); // Clear any existing list entries
 
@@ -2882,13 +2833,13 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return gxDBASE_NULL_PTR;
 
-  if(index_number > __ULWORD__(NumTrees()-1)) {
+  if(index_number > static_cast<__ULWORD__>(NumTrees() - 1)) {
     return pod->SetDataFileError(gxDBASE_BAD_INDEX_NUMBER);
   }
 
   // Test the range limits
   FAU_t num_records = pod->OpenDataFile()->NormalBlocks();
-  if(num_records == (FAU_t)0) return gxDBASE_NO_ERROR;
+  if(num_records == static_cast<FAU_t>(0)) return gxDBASE_NO_ERROR;
 
   if(list_limit > num_records) {
     return pod->SetDataFileError(gxDBASE_BAD_RANGE_LIMIT);
@@ -2898,23 +2849,22 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
   gxBtree *btx = GetDatabase()->Index(index_number);
   gxrdDatabaseRecord record;
   int exists;
-  gxDatabaseError err;
-  FAU_t record_count = (FAU_t)0;
-  __ULWORD__ field = 0;
-  if(search_field == (__ULWORD__)-1) {
-    field = (__ULWORD__)-1;
+  FAU_t record_count = static_cast<FAU_t>(0);
+  __ULWORD__ field;
+  if(search_field == static_cast<__ULWORD__>(-1)) {
+    field = static_cast<__ULWORD__>(-1);
   }
   else {
     field = search_field - 1;
   }
-  int pk = 0;
+  int pk;
   if(primary_key == -1) {
     pk = -1;
   }
   else {
     pk = primary_key - 1;
   }
-  err = record.CreateRecord(table.record_def);
+  gxDatabaseError err = record.CreateRecord(table.record_def);
   if(err != gxDBASE_NO_ERROR) {
     return pod->SetDataFileError(err);
   }
@@ -2977,8 +2927,7 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
 				__ULWORD__ index_number,
 				__ULWORD__ search_field, int case_cmp, 
 				int alpha_cmp, int find_all_matches, 
-				FAU_t list_limit)
-{
+				FAU_t list_limit) const {
   gxString sbuf;
   virtual_list.Clear(); // Clear any existing list entries
 
@@ -2988,21 +2937,20 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
   // PC-lint 05/02/2005: Possible use of null pointer
   if(!pod) return gxDBASE_NULL_PTR;
 
-  if(index_number > __ULWORD__(NumTrees()-1)) {
+  if(index_number > static_cast<__ULWORD__>(NumTrees() - 1)) {
     return pod->SetDataFileError(gxDBASE_BAD_INDEX_NUMBER);
   }
   gxrdDatabaseRecord compare_record;
-  gxDatabaseError err;
 
-  __ULWORD__ field = 0;
-  if(search_field == (__ULWORD__)-1) {
+  __ULWORD__ field;
+  if(search_field == static_cast<__ULWORD__>(-1)) {
     return pod->SetDataFileError(gxDBASE_BUFFER_OVERFLOW);
   }
   else {
     field = search_field - 1;
   }
 
-  err = compare_record.CreateRecord(table.record_def);
+  gxDatabaseError err = compare_record.CreateRecord(table.record_def);
   if(err != gxDBASE_NO_ERROR) {
     return pod->SetDataFileError(err);
   }
@@ -3036,6 +2984,7 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
 	 (sbuf == "UNCHECKED")) {
 	bool_buf = 0;
       }
+      // ReSharper disable once CppExpressionWithoutSideEffects
       compare_record.SetField(&bool_buf, sizeof(bool_buf), field);
       break;
     case gxrdCHAR : case gxrdVCHAR :
@@ -3060,12 +3009,14 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
       break;
       
     case gxrdINT16 :
-      i16buf = (short)search_string.Atoi();
+      i16buf = static_cast<short>(search_string.Atoi());
+      // ReSharper disable once CppExpressionWithoutSideEffects
       compare_record.SetField(&i16buf, sizeof(i16buf), field);
       break;
       
     case gxrdINT32 :
       i32buf = search_string.Atol();
+      // ReSharper disable once CppExpressionWithoutSideEffects
       compare_record.SetField(&i32buf, sizeof(i32buf), field);
       break;
       
@@ -3075,17 +3026,20 @@ gxDatabaseError gxRDBMS::Search(gxBStree<gxrdDatabaseRecord> &virtual_list,
       compare_record.SetField(&i64buf, sizeof(i64buf), field);
 #else
       f64buf = search_string.Atof();
+      // ReSharper disable once CppExpressionWithoutSideEffects
       compare_record.SetField(&f64buf, sizeof(f64buf), field);
 #endif
       break;
       
     case gxrdFLOAT : case gxrdCURRENCY :
       f64buf = search_string.Atof();
+      // ReSharper disable once CppExpressionWithoutSideEffects
       compare_record.SetField(&f64buf, sizeof(f64buf), field);
       break;
       
     case gxrdDATE :
       date_buf = search_string.c_str();
+      // ReSharper disable once CppExpressionWithoutSideEffects
       compare_record.SetField(&date_buf, sizeof(date_buf), field);
       break;
       

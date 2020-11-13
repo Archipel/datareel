@@ -41,9 +41,16 @@ exclude field that will not be copied to or from the disk record.
 ==============================================================
 */
 // ----------------------------------------------------------- // 
+// ReSharper disable CppClangTidyBugproneUndefinedMemoryManipulation
 #include "gxdlcode.h"
 
 #include "gxrdbhdr.h"
+
+
+
+#include "cdate.h"
+#include "gxfloat.h"
+#include "gxint16.h"
 
 #ifdef __BCC32__
 #pragma warn -8071
@@ -71,19 +78,17 @@ gxRDBMSHeader::gxRDBMSHeader()
 {
   const char *gxrdbms_id_string = "GXRDBMS";
   const char gxrdbms_rev_letter = '\0';
-  file_version = (gxUINT32)1027;
+  file_version = static_cast<gxUINT32>(1027);
   memmove(file_id, gxrdbms_id_string, (gxrdFILE_ID_STR_LEN-1));
   file_id[gxrdFILE_ID_STR_LEN-1] = gxrdbms_rev_letter;
 }
 
-int gxRDBMSHeader::TestFileID(const gxRDBMSHeader &ob)
-{
+int gxRDBMSHeader::TestFileID(const gxRDBMSHeader &ob) const {
   if(memcmp(file_id, ob.file_id, (gxrdFILE_ID_STR_LEN-1)) != 0) return 0;
   return 1;
 }
 
-int gxRDBMSHeader::TestVersion(const gxRDBMSHeader &ob)
-{
+int gxRDBMSHeader::TestVersion(const gxRDBMSHeader &ob) const {
   if(file_version != ob.file_version) return 0;
   return 1;
 }
@@ -96,8 +101,7 @@ int gxRDBMSHeader::TestRevLetter(const gxRDBMSHeader &ob)
   return 1;
 }
 
-int gxRDBMSHeader::TestHeader(const gxRDBMSHeader &ob)
-{
+int gxRDBMSHeader::TestHeader(const gxRDBMSHeader &ob) const {
   if(memcmp(file_id, ob.file_id, gxrdFILE_ID_STR_LEN) != 0) return 0;
   if(file_version != ob.file_version) return 0;
   return 1;
@@ -125,13 +129,12 @@ void gxrdRecordHeader::Copy(const gxrdRecordHeader &ob)
 
 void gxrdRecordHeader::SetTableID(const gxString &table_name) 
 {
-  if(table_name.is_null()) table_id = (gxUINT32)0;
+  if(table_name.is_null()) table_id = static_cast<gxUINT32>(0);
   table_id = calcCRC32(table_name.c_str(), table_name.length());
 }
 
-gxUINT32 gxrdRecordHeader::GetCRC(const gxString &table_name) 
-{
-  if(table_name.is_null()) return (gxUINT32)0;
+gxUINT32 gxrdRecordHeader::GetCRC(const gxString &table_name) const {
+  if(table_name.is_null()) return static_cast<gxUINT32>(0);
   return calcCRC32(table_name.c_str(), table_name.length());
 }
 
@@ -139,8 +142,8 @@ void gxrdTableHeaderField::Clear()
 {
   field_type_id = 0;
   format_specifier = 0;
-  column_length = (gxUINT32)0;
-  array_length = (gxUINT32)0;
+  column_length = static_cast<gxUINT32>(0);
+  array_length = static_cast<gxUINT32>(0);
   memset(field_name, 0, tableFIELD_NAME_LEN);
 }
 
@@ -154,8 +157,7 @@ void gxrdTableHeaderField::Copy(const gxrdTableHeaderField &ob)
   memmove(field_name, ob.field_name, tableFIELD_NAME_LEN);
 }
 
-__ULWORD__ gxrdTableHeaderField::SizeOf()
-{
+__ULWORD__ gxrdTableHeaderField::SizeOf() const {
   __ULWORD__ size = (sizeof(field_type_id)+sizeof(format_specifier));
   size += sizeof(column_length);
   size += sizeof(array_length);
@@ -163,9 +165,8 @@ __ULWORD__ gxrdTableHeaderField::SizeOf()
   return size;
 }
 
-int gxrdTableHeaderField::VerifyFieldType() 
-{
-  int type = (int)field_type_id;
+int gxrdTableHeaderField::VerifyFieldType() const {
+  int type = static_cast<int>(field_type_id);
 
   // NOTE: All relational field types must be account for in
   // this function.
@@ -191,14 +192,13 @@ int gxrdTableHeaderField::VerifyFieldType()
 }
 
 int gxrdTableHeaderField::TestFieldType(const gxrdTableHeaderField &ob,
-					int strict_test) 
-{
+					int strict_test) const {
   if(strict_test) {
     return field_type_id == ob.field_type_id;
   }
   if(field_type_id != ob.field_type_id) {
-    int type1 = (int)field_type_id;
-    int type2 = (int)ob.field_type_id;
+    int type1 = static_cast<int>(field_type_id);
+    int type2 = static_cast<int>(ob.field_type_id);
 
     // NOTE: All relational field types must be account for in
     // this function.
@@ -246,8 +246,7 @@ int gxrdTableHeaderField::TestFieldType(const gxrdTableHeaderField &ob,
   return 1;
 }
 
-int gxrdTableHeaderField::TestFieldVars(const gxrdTableHeaderField &ob)
-{
+int gxrdTableHeaderField::TestFieldVars(const gxrdTableHeaderField &ob) const {
   if(format_specifier != ob.format_specifier) return 0;
   if(array_length != ob.array_length) return 0;
   if(column_length != ob.column_length) return 0;
@@ -270,15 +269,15 @@ int gxrdTableHeaderField::TestFieldVars(const gxrdTableHeaderField &ob)
 
 gxrdTableHeader::gxrdTableHeader() 
 {
-  fields = 0;
-  num_fields = (gxUINT32)0;
+  fields = nullptr;
+  num_fields = static_cast<gxUINT32>(0);
   Clear();
 }
 
 gxrdTableHeader::gxrdTableHeader(const gxrdTableHeader &ob)
 {
-  fields = 0;
-  num_fields = (gxUINT32)0;
+  fields = nullptr;
+  num_fields = static_cast<gxUINT32>(0);
   Clear();
   Copy(ob); 
 }
@@ -288,17 +287,16 @@ gxString gxrdTableHeader::TableDef() const
 // store in the table header.
 {
   gxString def;
-  __ULWORD__ i, type;
   if((!fields) || (!num_fields)) {
     // This header has not been initialized
     return def;
   }
   def << table_name << ",";
-  for(i = 0; i < num_fields; i++) {
-    type = (int)fields[i].field_type_id;
+  for(__ULWORD__ i = 0; i < num_fields; i++) {
+    __ULWORD__ type = static_cast<int>(fields[i].field_type_id);
     def << fields[i].field_name << "{" << fields[i].column_length << "}" 
-	<< gxrdFieldTypeString((gxrdFIELD_TYPES)type);
-    if(fields[i].array_length > (gxUINT32)0) {
+	<< gxrdFieldTypeString(static_cast<gxrdFIELD_TYPES>(type));
+    if(fields[i].array_length > static_cast<gxUINT32>(0)) {
       def << "[" << fields[i].array_length << "]";
     }
     if(fields[i].format_specifier != 0) {
@@ -306,7 +304,7 @@ gxString gxrdTableHeader::TableDef() const
 	def << "." << fields[i].format_specifier;
       }
       else { 
-	def << "." << (int)fields[i].format_specifier;
+	def << "." << static_cast<int>(fields[i].format_specifier);
       }
     }
     if(i < (num_fields-1)) def << ",";
@@ -340,8 +338,8 @@ void gxrdTableHeader::SetFKeyDef(const char *s)
 
 gxrdTableHeader::gxrdTableHeader(__ULWORD__ nfields) 
 {
-  fields = 0;
-  num_fields = (gxUINT32)0;
+  fields = nullptr;
+  num_fields = static_cast<gxUINT32>(0);
   Clear();
   AllocHeader(nfields);
 }
@@ -359,15 +357,14 @@ void gxrdTableHeader::Copy(const gxrdTableHeader &ob)
   num_fields = ob.num_fields;
   AllocHeader(num_fields);
   if(!fields) {
-    num_fields = (gxUINT32)0;
+    num_fields = static_cast<gxUINT32>(0);
     return;
   }
   for(__ULWORD__ i = 0; i < num_fields; i++) fields[i] = ob.fields[i];
 }
 
-int gxrdTableHeader::VerifyFieldTypes()
-{
-  if(num_fields == (__ULWORD__)0) return 0;
+int gxrdTableHeader::VerifyFieldTypes() const {
+  if(num_fields == static_cast<__ULWORD__>(0)) return 0;
   if(!fields) return 0; // Object is not initialized
 
   for(__ULWORD__ i = 0; i < num_fields; i++) {
@@ -376,8 +373,7 @@ int gxrdTableHeader::VerifyFieldTypes()
   return 1;
 }
 
-int gxrdTableHeader::TestFieldTypes(const gxrdTableHeader &ob)
-{
+int gxrdTableHeader::TestFieldTypes(const gxrdTableHeader &ob) const {
   if(num_fields != ob.num_fields) return 0;
   if(fields) {
     if(!ob.fields) return 0; // Object is not initialized
@@ -391,8 +387,7 @@ int gxrdTableHeader::TestFieldTypes(const gxrdTableHeader &ob)
   return 1;
 }
 
-int gxrdTableHeader::TestFieldVars(const gxrdTableHeader &ob) 
-{
+int gxrdTableHeader::TestFieldVars(const gxrdTableHeader &ob) const {
   if(num_fields != ob.num_fields) return 0;
   if(fields) {
     if(!ob.fields) return 0; // Object is not initialized
@@ -406,8 +401,7 @@ int gxrdTableHeader::TestFieldVars(const gxrdTableHeader &ob)
   return 1;
 }
 
-int gxrdTableHeader::TestTableName(const gxrdTableHeader &ob)
-{
+int gxrdTableHeader::TestTableName(const gxrdTableHeader &ob) const {
   gxString sbuf1, sbuf2;
   if(!test_for_null(table_name, tableNAME_LEN)) {
     sbuf1.InsertAt(0, table_name, tableNAME_LEN);
@@ -424,8 +418,7 @@ int gxrdTableHeader::TestTableName(const gxrdTableHeader &ob)
   return sbuf1 == sbuf2;
 }
 
-int gxrdTableHeader::TestKeyDef(const gxrdTableHeader &ob)
-{
+int gxrdTableHeader::TestKeyDef(const gxrdTableHeader &ob) const {
   gxString sbuf1, sbuf2;
   if(!test_for_null(key_def, tableDEF_LEN)) {
     sbuf1.InsertAt(0, key_def, tableDEF_LEN);
@@ -442,8 +435,7 @@ int gxrdTableHeader::TestKeyDef(const gxrdTableHeader &ob)
   return sbuf1 == sbuf2;
 }
 
-int gxrdTableHeader::TestFormDef(const gxrdTableHeader &ob)
-{
+int gxrdTableHeader::TestFormDef(const gxrdTableHeader &ob) const {
   gxString sbuf1, sbuf2;
   if(!test_for_null(form_def, tableDEF_LEN)) {
     sbuf1.InsertAt(0, form_def, tableDEF_LEN);
@@ -460,8 +452,7 @@ int gxrdTableHeader::TestFormDef(const gxrdTableHeader &ob)
   return sbuf1 == sbuf2;
 }
 
-int gxrdTableHeader::TestFKeyDef(const gxrdTableHeader &ob)
-{
+int gxrdTableHeader::TestFKeyDef(const gxrdTableHeader &ob) const {
   gxString sbuf1, sbuf2;
   if(!test_for_null(fkey_def, tableDEF_LEN)) {
     sbuf1.InsertAt(0, fkey_def, tableDEF_LEN);
@@ -487,7 +478,7 @@ void gxrdTableHeader::Clear()
   memset(app_space, 0, tableAPPLICATION_SPACE);
   for(__ULWORD__ i = 0; i < num_fields; i++) {
     if(!fields) {
-      num_fields = (gxUINT32)0;
+      num_fields = static_cast<gxUINT32>(0);
       break;
     }
     fields[i].Clear();
@@ -499,11 +490,11 @@ int gxrdTableHeader::AllocHeader(__ULWORD__ nfields)
   DestroyHeader();
 
   // Test the number of fields before allocating memory
-  if(nfields <= (gxUINT32)0) nfields = tableMIN_FIELDS;
-  if(nfields > (__ULWORD__)tableMAX_FIELDS) nfields = tableMAX_FIELDS;
+  if(nfields <= static_cast<gxUINT32>(0)) nfields = tableMIN_FIELDS;
+  if(nfields > static_cast<__ULWORD__>(tableMAX_FIELDS)) nfields = tableMAX_FIELDS;
 
-  num_fields = (gxUINT32)nfields;
-  fields = new gxrdTableHeaderField[(int)num_fields];
+  num_fields = static_cast<gxUINT32>(nfields);
+  fields = new gxrdTableHeaderField[static_cast<int>(num_fields)];
   if(!fields) return 0;
   memset(app_space, 0, tableAPPLICATION_SPACE);
   return 1;
@@ -511,13 +502,12 @@ int gxrdTableHeader::AllocHeader(__ULWORD__ nfields)
 
 void gxrdTableHeader::DestroyHeader() 
 {
-  if(fields) delete[] fields;
-  fields = 0;
-  num_fields = (gxUINT32)0;
+  delete[] fields;
+  fields = nullptr;
+  num_fields = static_cast<gxUINT32>(0);
 }
 
-int gxrdTableHeader::GetField(gxrdTableHeaderField *fh, __ULWORD__ nfield) 
-{
+int gxrdTableHeader::GetField(gxrdTableHeaderField *fh, __ULWORD__ nfield) const {
   if(!fields) return 0;
   if(nfield > (num_fields-1)) return 0;
   fh->field_type_id = fields[nfield].field_type_id;
@@ -530,9 +520,7 @@ int gxrdTableHeader::GetField(gxrdTableHeaderField *fh, __ULWORD__ nfield)
 }
 
 int gxrdTableHeader::SetField(char field_type_id, char format_specifier, 
-			      char *field_name, gxUINT32 column_length, 
-			      gxUINT32 array_length, __ULWORD__ nfield) 
-{
+			      char *field_name, const gxUINT32 &column_length, const gxUINT32 &array_length, __ULWORD__ nfield) const {
   if(!fields) return 0;
   if(nfield > (num_fields-1)) return 0;
   fields[nfield].Clear();
@@ -545,8 +533,7 @@ int gxrdTableHeader::SetField(char field_type_id, char format_specifier,
   return 1;
 }
 
-__ULWORD__ gxrdTableHeader::SizeOf() 
-{
+__ULWORD__ gxrdTableHeader::SizeOf() const {
   gxrdTableHeaderField thf;
   __ULWORD__ size = sizeof(table_name);
   size += sizeof(key_def);
@@ -569,8 +556,7 @@ void gxrdDatabaseTable::Copy(const gxrdDatabaseTable &ob)
 
 __ULWORD__ gxrdDatabaseTable::SizeOf()
 {
-  __ULWORD__ size;
-  size = table_name.length();
+	__ULWORD__ size = table_name.length();
   size += record_def.length();
   size += table_def.length();
   size += table_header.SizeOf();
@@ -613,7 +599,7 @@ gxDatabaseError gxrdDatabaseTable::CreateTable(const gxString &tdef)
  table_name.FilterChar('\t');
  table_name.TrimLeadingSpaces();
  table_name.TrimTrailingSpaces();
- for(i = 0; i < (int)table_name.length(); i++) {
+ for(i = 0; i < static_cast<int>(table_name.length()); i++) {
    // Include both UNIX and WIN32 platforms
    if(table_name[i] == '/') return gxDBASE_ILLEGAL_CHAR;
    if(table_name[i] == '\\') return gxDBASE_ILLEGAL_CHAR;
@@ -647,7 +633,7 @@ gxDatabaseError gxrdDatabaseTable::CreateTable(const gxString &tdef)
      sbuf = words[i];
      intbuf.Clear();
      array_len.Clear();
-     alen = (__ULWORD__)0;
+     alen = static_cast<__ULWORD__>(0);
      format_attrib.Clear();
      found_field_type = 0;
      format_specifier = 0;
@@ -667,7 +653,7 @@ gxDatabaseError gxrdDatabaseTable::CreateTable(const gxString &tdef)
      field_name.TrimLeadingSpaces();
      field_name.TrimTrailingSpaces();
      
-     column_length = (gxUINT32)intbuf.Atoi();
+     column_length = static_cast<gxUINT32>(intbuf.Atoi());
      // 07/13/2003: NOTE: A 0 column length is used to tell the GUI
      // to hide this field from input and display functions
      field_type = sbuf;
@@ -710,7 +696,7 @@ gxDatabaseError gxrdDatabaseTable::CreateTable(const gxString &tdef)
      }
      
      // Set the field type ID
-     field_type_id = (char)j;
+     field_type_id = static_cast<char>(j);
      
      // Set the record definition for this table
      record_def << field_type;
@@ -749,7 +735,7 @@ void gxrdDatabaseKey_t::Copy(const gxrdDatabaseKey_t &ob)
 
 int gxrdDatabaseKey::operator==(const DatabaseKeyB& k) const
 {
-  const gxrdDatabaseKey *kptr = (const gxrdDatabaseKey *)(&k);
+  const gxrdDatabaseKey *kptr = static_cast<const gxrdDatabaseKey *>(&k);
   // NOTE: Duplicate names will not be allowed if the object ID is ignored
   if(!allow_dup_names) {  
     return key.k == kptr->key.k;
@@ -762,7 +748,7 @@ int gxrdDatabaseKey::operator==(const DatabaseKeyB& k) const
 
 int gxrdDatabaseKey::operator>(const DatabaseKeyB& k) const
 {
-  const gxrdDatabaseKey *kptr = (const gxrdDatabaseKey *)(&k);
+  const gxrdDatabaseKey *kptr = static_cast<const gxrdDatabaseKey *>(&k);
   // NOTE: Duplicate names will not be allowed if the object ID is ignored
   if(!allow_dup_names) { 
     return key.k > kptr->key.k;
@@ -775,7 +761,7 @@ int gxrdDatabaseKey::operator>(const DatabaseKeyB& k) const
 
 int gxrdDatabaseKey::CompareKey(const DatabaseKeyB& k) const
 {
-  const gxrdDatabaseKey *kptr = (const gxrdDatabaseKey *)(&k);
+  const gxrdDatabaseKey *kptr = static_cast<const gxrdDatabaseKey *>(&k);
   int rv = -1;
   if(key.k > kptr->key.k) rv = 1;
   if(key.k == kptr->key.k) rv = 0;  
@@ -806,14 +792,13 @@ __ULWORD__ gxrdDatabaseRecord::SizeOf() const
 // bytes allocated for this record in memory may be larger for
 // variable length records that grow and shrink in size.
 { 
-  if((!db_record) || (!num_fields)) return (__ULWORD__)0;
+  if((!db_record) || (!num_fields)) return static_cast<__ULWORD__>(0);
 
   __ULWORD__ total_size = 0;
-  __ULWORD__ i;
   __ULWORD__ field_type_size = sizeof(char);
   gxUINT32 num_bytes;
 
-  for(i = 0; i < num_fields; i++) {
+  for(__ULWORD__ i = 0; i < num_fields; i++) {
     total_size += (sizeof(num_bytes)+field_type_size);
     memmove(&num_bytes, (db_record[i].m_buf()+field_type_size), 
 	    sizeof(num_bytes));
@@ -824,12 +809,11 @@ __ULWORD__ gxrdDatabaseRecord::SizeOf() const
 
 __ULWORD__ gxrdDatabaseRecord::SizeOfBuffer() const 
 { 
-  if((!db_record) || (!num_fields)) return (__ULWORD__)0;
+  if((!db_record) || (!num_fields)) return static_cast<__ULWORD__>(0);
 
   __ULWORD__ total_size = 0;
-  __ULWORD__ i;
 
-  for(i = 0; i < num_fields; i++) {
+  for(__ULWORD__ i = 0; i < num_fields; i++) {
     total_size += db_record[i].length();
   }
   return total_size;
@@ -837,8 +821,8 @@ __ULWORD__ gxrdDatabaseRecord::SizeOfBuffer() const
 
 __ULWORD__ gxrdDatabaseRecord::SizeOfField(__ULWORD__ col_number) const
 {
-  if(!db_record) return (__ULWORD__)0;
-  if(col_number > (num_fields-1)) return (__ULWORD__)0;
+  if(!db_record) return static_cast<__ULWORD__>(0);
+  if(col_number > (num_fields-1)) return static_cast<__ULWORD__>(0);
 
   __ULWORD__ total_size = 0;
   __ULWORD__ field_type_size = sizeof(char);
@@ -865,31 +849,27 @@ void gxrdDatabaseRecord::Clear()
   // reused if possible.
 }
 
-__ULWORD__ gxrdDatabaseRecord::FieldLength(__ULWORD__ col_number)
-{
+__ULWORD__ gxrdDatabaseRecord::FieldLength(__ULWORD__ col_number) const {
   char field_type_id;
   gxUINT32 num_bytes;
   FieldData(col_number, field_type_id, num_bytes);
-  return (__ULWORD__)num_bytes;
+  return static_cast<__ULWORD__>(num_bytes);
 }
 
-int gxrdDatabaseRecord::FieldType(__ULWORD__ col_number)
-{
+int gxrdDatabaseRecord::FieldType(__ULWORD__ col_number) const {
   char field_type_id;
   gxUINT32 num_bytes;
   FieldData(col_number, field_type_id, num_bytes);
-  return (int)field_type_id;
+  return static_cast<int>(field_type_id);
 }
 
-int gxrdDatabaseRecord::FieldHasNull(__ULWORD__ col_number)
-{
-  __ULWORD__ i;
-  __ULWORD__ npos = 0;
+int gxrdDatabaseRecord::FieldHasNull(__ULWORD__ col_number) const {
+	__ULWORD__ npos = 0;
   char field_type_id;
   gxUINT32 num_bytes;
-  char *p = (char *)FieldData(col_number, field_type_id, num_bytes);
+  char *p = static_cast<char *>(FieldData(col_number, field_type_id, num_bytes));
   if(!p) return 0;
-  for(i = 0; i < num_bytes; i++, p++) {
+  for(__ULWORD__ i = 0; i < num_bytes; i++, p++) {
     if(*p == 0) {
       npos = i;
       if(i == 0) npos++; // The first char is null
@@ -900,10 +880,9 @@ int gxrdDatabaseRecord::FieldHasNull(__ULWORD__ col_number)
 }
 
 void *gxrdDatabaseRecord::FieldData(__ULWORD__ col_number, char &field_type_id,
-				    gxUINT32 &num_bytes)
-{
-  if(!db_record) return (void *)0;
-  if(col_number > (num_fields-1)) return (void *)0;
+				    gxUINT32 &num_bytes) const {
+  if(!db_record) return static_cast<void *>(nullptr);
+  if(col_number > (num_fields-1)) return static_cast<void *>(nullptr);
   __ULWORD__ offset = 0;
   memmove(&field_type_id, (db_record[col_number].m_buf()+offset), 
 	  sizeof(field_type_id));
@@ -911,19 +890,17 @@ void *gxrdDatabaseRecord::FieldData(__ULWORD__ col_number, char &field_type_id,
   memmove(&num_bytes, (db_record[col_number].m_buf()+offset), 
 	  sizeof(num_bytes));
   offset += sizeof(num_bytes);
-  return (void *)(db_record[col_number].m_buf()+offset);
+  return static_cast<void *>(db_record[col_number].m_buf() + offset);
 }
 
-void *gxrdDatabaseRecord::FieldData(__ULWORD__ col_number)
-{
+void *gxrdDatabaseRecord::FieldData(__ULWORD__ col_number) const {
   char field_type_id;
   gxUINT32 num_bytes;
   return FieldData(col_number, field_type_id, num_bytes);
 }
 
 gxDatabaseError gxrdDatabaseRecord::FieldDataDiskOffset(__ULWORD__ &offset, 
-							__ULWORD__ col_number)
-{
+							__ULWORD__ col_number) const {
   gxDatabaseError err = FieldDiskOffset(offset, col_number);
   if(err != gxDBASE_NO_ERROR) {
     return err;
@@ -935,8 +912,7 @@ gxDatabaseError gxrdDatabaseRecord::FieldDataDiskOffset(__ULWORD__ &offset,
 }
 
 gxDatabaseError gxrdDatabaseRecord::FieldDiskOffset(__ULWORD__ &offset, 
-						    __ULWORD__ col_number)
-{
+						    __ULWORD__ col_number) const {
   if(!db_record) return gxDBASE_NULL_PTR;
   if(col_number > (num_fields-1)) return gxDBASE_BUFFER_OVERFLOW;
   gxUINT32 num_bytes;
@@ -955,8 +931,7 @@ gxDatabaseError gxrdDatabaseRecord::FieldDiskOffset(__ULWORD__ &offset,
 
 gxDatabaseError gxrdDatabaseRecord::GetField(void *data, 
 					     __ULWORD__ bytes, 
-					     __ULWORD__ col_number) 
-{
+					     __ULWORD__ col_number) const {
   if(!db_record) return gxDBASE_NULL_PTR;
   if(col_number > (num_fields-1)) return gxDBASE_BUFFER_OVERFLOW;
 
@@ -979,29 +954,26 @@ gxDatabaseError gxrdDatabaseRecord::GetField(void *data,
   return gxDBASE_NO_ERROR;
 }
 
-void *gxrdDatabaseRecord::GetField(__ULWORD__ col_number)
-{ 
+void *gxrdDatabaseRecord::GetField(__ULWORD__ col_number) const { 
   __ULWORD__ bytes;
   gxDatabaseError err;
   return GetField(col_number, bytes, err);
 }
 
-void *gxrdDatabaseRecord::GetField(__ULWORD__ col_number, __ULWORD__ &bytes)
-{ 
+void *gxrdDatabaseRecord::GetField(__ULWORD__ col_number, __ULWORD__ &bytes) const { 
   gxDatabaseError err;
   return GetField(col_number, bytes, err);
 }
 
 void *gxrdDatabaseRecord::GetField(__ULWORD__ col_number, __ULWORD__ &bytes, 
-				   gxDatabaseError &err) 
-{
+				   gxDatabaseError &err) const {
   if(!db_record) {
     err = gxDBASE_NULL_PTR;
-    return (void *)0;
+    return static_cast<void *>(nullptr);
   }
   if(col_number > (num_fields-1)) {
     err = gxDBASE_BUFFER_OVERFLOW;
-    return (void *)0;
+    return static_cast<void *>(nullptr);
   }
 
   gxUINT32 num_bytes;
@@ -1014,13 +986,12 @@ void *gxrdDatabaseRecord::GetField(__ULWORD__ col_number, __ULWORD__ &bytes,
   // Pass the field length back to the caller
   bytes = num_bytes;
 
-  return (void *)(db_record[col_number].m_buf()+offset);
+  return static_cast<void *>(db_record[col_number].m_buf() + offset);
 }
 
 gxDatabaseError gxrdDatabaseRecord::SetField(const void *data, 
 					     __ULWORD__ bytes, 
-					     __ULWORD__ col_number) 
-{
+					     __ULWORD__ col_number) const {
   if(!db_record) return gxDBASE_NULL_PTR;
   if(col_number > (num_fields-1)) return gxDBASE_BUFFER_OVERFLOW;
   gxUINT32 num_bytes, nsize;
@@ -1092,7 +1063,7 @@ int gxrdDatabaseRecord::AllocArray(__ULWORD__ nfields)
 {
   // Check the object array boundaries
   if(nfields <= 0) nfields = recordMIN_FIELDS;
-  if(nfields > (__ULWORD__)recordMAX_FIELDS) nfields = recordMAX_FIELDS;
+  if(nfields > static_cast<__ULWORD__>(recordMAX_FIELDS)) nfields = recordMAX_FIELDS;
 
   if(db_record) { // Memory has been allocated for the array
     if(num_fields >= nfields) { // Do not re-allocate
@@ -1107,7 +1078,7 @@ int gxrdDatabaseRecord::AllocArray(__ULWORD__ nfields)
   MemoryBuffer *buf = new MemoryBuffer[nfields];
   if(!buf) { 
     num_fields = 0;
-    db_record = 0;
+    db_record = nullptr;
     return 0; // An memory allocation error occurred
   }
 
@@ -1120,43 +1091,35 @@ void gxrdDatabaseRecord::DeleteArray()
 // Free the memory used for the record array and reset the
 // array variables.
 {
-  if(db_record) delete[] db_record;
-  db_record = 0;
+	delete[] db_record;
+  db_record = nullptr;
   num_fields = 0;
 }
 
 gxDatabaseError gxrdDatabaseRecord::InitRecord(const gxString &def)
 {
   char words[MAXWORDS][MAXWORDLENGTH];
-  int num_words, parse_err;
-  parse_err = parse(def.c_str(), words, &num_words, ',');
+  int num_words;
+  int parse_err = parse(def.c_str(), words, &num_words, ',');
   if(parse_err != 0) {
     return gxDBASE_BAD_RECORD_DEF;
   }
-  gxString sbuf;
   gxString array_len;
-  gxString field_type;
-  int i, j;
-  int found_field_type;
+  int j;
   __ULWORD__ size = 0;
   __ULWORD__ overhead = 0;
-  __ULWORD__ offset = 0;
-
-  __ULWORD__ field_len = 0;
 
   gxUINT32 num_bytes;
   char field_type_id;
 
-  for(i = 1; i < num_words; i++) {
+  for(int i = 1; i < num_words; i++) {
     if(*words[i]) {
       array_len.Clear(); // Clear the attribute string
-      field_len = 0;     // Reset the field size
-      offset = 0;        // Reset the offset
-      found_field_type = 0;      
-      sbuf = words[i];
+      int found_field_type = 0;      
+      gxString sbuf = words[i];
       sbuf.TrimLeadingSpaces();
       sbuf.TrimTrailingSpaces();
-      field_type = sbuf;
+      gxString field_type = sbuf;
       if(field_type.Find("[") != -1) {
 	array_len = sbuf;
 	array_len.DeleteBeforeIncluding("[");
@@ -1178,8 +1141,8 @@ gxDatabaseError gxrdDatabaseRecord::InitRecord(const gxString &def)
 	return gxDBASE_BAD_FIELD_TYPE;
       }
 
-      gxrdFIELD_TYPES type = (gxrdFIELD_TYPES)j;
-      field_type_id = (char)j;
+      gxrdFIELD_TYPES type = static_cast<gxrdFIELD_TYPES>(j);
+      field_type_id = static_cast<char>(j);
       GetRecordTypeSize(type, size, overhead);
 
       // Set the number of bytes allocated for this data type
@@ -1190,13 +1153,13 @@ gxDatabaseError gxrdDatabaseRecord::InitRecord(const gxString &def)
       else {
 	num_bytes = size;
       }
-      field_len = num_bytes + overhead;
+      __ULWORD__ field_len = num_bytes + overhead;
 
       // Setup the memory buffer and set the type ID and data length
       if(!db_record) return gxDBASE_NULL_PTR;
       db_record[(i-1)].resize(field_len, 0);
       db_record[(i-1)].MemSet(0, 0, field_len);
-      offset = 0;
+      __ULWORD__ offset = 0;
       memmove((db_record[(i-1)].m_buf()+offset), &field_type_id, 
 	       sizeof(field_type_id));
       offset += sizeof(field_type_id);
@@ -1244,10 +1207,10 @@ void gxrdDatabaseRecord::Copy(const gxrdDatabaseRecord &ob)
 gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field, 
 					    int case_cmp) const
 {
-  if(!db_record) return (gxrdKeyType_t)0;
+  if(!db_record) return static_cast<gxrdKeyType_t>(0);
 
   int compare_all = 0;
-  if(field == (__ULWORD__)-1) compare_all = 1;
+  if(field == static_cast<__ULWORD__>(-1)) compare_all = 1;
   if(field > num_fields) compare_all = 1;
 
   char field_type_id;
@@ -1293,16 +1256,16 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
     memmove(&num_bytes, (db_record[i].m_buf()+offset), 
 	    sizeof(num_bytes));
     offset += sizeof(num_bytes);
-    type = (int)field_type_id;
+    type = static_cast<int>(field_type_id);
 
     // Move to the field type
-    p = (char *)(db_record[i].m_buf()+offset);
+    p = reinterpret_cast<char*>(db_record[i].m_buf() + offset);
 
     // NOTE: All relational field types must be account for in
     // this function.
     switch(type) {
       case gxrdBOOL :
-	if(num_bytes < 1) return (gxrdKeyType_t)0;
+	if(num_bytes < 1) return static_cast<gxrdKeyType_t>(0);
 	buf_size += 1;
 	if(buf.length() < buf_size) buf.resize(buf_size);
 	memmove(&bool_buf, p, 1);
@@ -1311,7 +1274,7 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       case gxrdCHAR : case gxrdVCHAR :
-	if(num_bytes < sizeof(char)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(char)) return static_cast<gxrdKeyType_t>(0);
 	sbuf.Clear();
 	for(j = 0; j < num_bytes; j++, p++) {
 	  if(*p == 0) {
@@ -1321,11 +1284,11 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	  }
 	}
 	if(npos == 0) { // This is not a null terminated string
-	  sbuf.InsertAt(0, (char *)(db_record[i].m_buf()+offset), 
+	  sbuf.InsertAt(0, reinterpret_cast<char *>(db_record[i].m_buf() + offset), 
 			num_bytes);
 	}
 	else { // This is null terminated string
-	  sbuf = (char *)(db_record[i].m_buf()+offset);
+	  sbuf = reinterpret_cast<char *>(db_record[i].m_buf() + offset);
 	}
 	// Do not compare string case
 	if(!case_cmp) sbuf.ToUpper();
@@ -1336,14 +1299,14 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 	
       case gxrdBLOB : // BLOB types cannot be indexed
-	if(num_bytes < sizeof(char)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(char)) return static_cast<gxrdKeyType_t>(0);
 	buf_offset += num_bytes; // Continue to the next field
 	break;
 
       case gxrdBINARY : // User defined types and small binary objects
-	if(num_bytes < sizeof(char)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(char)) return static_cast<gxrdKeyType_t>(0);
 	bin_buf.Clear();
-	bin_buf.InsertAt(0, (char *)(db_record[i].m_buf()+offset), 
+	bin_buf.InsertAt(0, reinterpret_cast<char *>(db_record[i].m_buf() + offset), 
 			 num_bytes);
 	buf_size += bin_buf.length();
 	if(buf.length() < buf_size) buf.resize(buf_size);
@@ -1352,7 +1315,7 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       case gxrdINT16 :
-	if(num_bytes < sizeof(gxINT16)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(gxINT16)) return static_cast<gxrdKeyType_t>(0);
 	buf_size += sizeof(gxINT16);
 	if(buf.length() < buf_size) buf.resize(buf_size);
 	memmove(&i16buf, p, sizeof(gxINT16));
@@ -1361,7 +1324,7 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       case gxrdINT32 :
-	if(num_bytes < sizeof(gxINT32)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(gxINT32)) return static_cast<gxrdKeyType_t>(0);
 	buf_size += sizeof(gxINT32);
 	if(buf.length() < buf_size) buf.resize(buf_size);
 	memmove(&i32buf, p, sizeof(gxINT32));
@@ -1370,7 +1333,7 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       case gxrdINT64 :
-	if(num_bytes < 8) return (gxrdKeyType_t)0;
+	if(num_bytes < 8) return static_cast<gxrdKeyType_t>(0);
 	buf_size += 8;
 	if(buf.length() < buf_size) buf.resize(buf_size);
 #if defined (__64_BIT_DATABASE_ENGINE__)
@@ -1388,7 +1351,7 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       case gxrdFLOAT : case gxrdCURRENCY :
-	if(num_bytes < sizeof(gxFLOAT64)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(gxFLOAT64)) return static_cast<gxrdKeyType_t>(0);
 	buf_size += sizeof(gxFLOAT64);
 	if(buf.length() < buf_size) buf.resize(buf_size);
 	memmove(&f64buf, p, sizeof(gxFLOAT64));
@@ -1397,7 +1360,7 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       case gxrdDATE :
-	if(num_bytes < sizeof(CDate)) return (gxrdKeyType_t)0;
+	if(num_bytes < sizeof(CDate)) return static_cast<gxrdKeyType_t>(0);
 	buf_size += sizeof(CDate);
 	if(buf.length() < buf_size) buf.resize(buf_size);
 	memmove(&date_buf, p, sizeof(CDate));
@@ -1406,11 +1369,11 @@ gxrdKeyType_t gxrdDatabaseRecord::CreateKey(__ULWORD__ field,
 	break;
 
       default:
-	return (gxrdKeyType_t)0;
+	return static_cast<gxrdKeyType_t>(0);
     }
     if(!compare_all) break;
   }
-  return calcCRC32((char *)buf.m_buf(), buf_size);
+  return calcCRC32(reinterpret_cast<char *>(buf.m_buf()), buf_size);
 }
 
 int gxrdDatabaseRecord::Compare(const gxrdDatabaseRecord &ob, 
@@ -1425,7 +1388,7 @@ int gxrdDatabaseRecord::Compare(const gxrdDatabaseRecord &ob,
   if(num_fields != ob.num_fields) return result;
 
   int compare_all = 0;
-  if(field == (__ULWORD__)-1) compare_all = 1;
+  if(field == static_cast<__ULWORD__>(-1)) compare_all = 1;
   if((field > num_fields) || (field > ob.num_fields)) compare_all = 1;
 
   char field_type_id1, field_type_id2;
@@ -1475,11 +1438,11 @@ int gxrdDatabaseRecord::Compare(const gxrdDatabaseRecord &ob,
 
     // Two different types specified
     if(field_type_id1 != field_type_id2) return -1;
-    type = (int)field_type_id1;
+    type = static_cast<int>(field_type_id1);
 
     // Move to the field type
-    p1 = (char *)(db_record[i].m_buf()+offset1);
-    p2 = (char *)(ob.db_record[i].m_buf()+offset2);
+    p1 = reinterpret_cast<char *>(db_record[i].m_buf() + offset1);
+    p2 = reinterpret_cast<char *>(ob.db_record[i].m_buf() + offset2);
 
     // NOTE: All relational field types must be account for in
     // this function.
@@ -1515,14 +1478,14 @@ int gxrdDatabaseRecord::Compare(const gxrdDatabaseRecord &ob,
 	  }
 	}
 	if((npos1 == 0) || (npos2 == 0)) {
-	  sbuf1.InsertAt(0, (char *)(db_record[i].m_buf()+offset1), 
+	  sbuf1.InsertAt(0, reinterpret_cast<char *>(db_record[i].m_buf() + offset1), 
 			 num_bytes1);
-	  sbuf2.InsertAt(0, (char *)(ob.db_record[i].m_buf()+offset2), 
+	  sbuf2.InsertAt(0, reinterpret_cast<char *>(ob.db_record[i].m_buf() + offset2), 
 			 num_bytes2);
 	}
 	else {
-	  sbuf1 = (char *)(db_record[i].m_buf()+offset1);
-	  sbuf2 = (char *)(ob.db_record[i].m_buf()+offset2);
+	  sbuf1 = reinterpret_cast<char *>(db_record[i].m_buf() + offset1);
+	  sbuf2 = reinterpret_cast<char *>(ob.db_record[i].m_buf() + offset2);
 	}
 	if(!case_cmp) {
 	  // Disregard the string case 
@@ -1554,9 +1517,9 @@ int gxrdDatabaseRecord::Compare(const gxrdDatabaseRecord &ob,
 	  return -1;
 	}
 	bin_buf1.Clear(); bin_buf2.Clear();
-	bin_buf1.InsertAt(0, (char *)(db_record[i].m_buf()+offset1), 
+	bin_buf1.InsertAt(0, reinterpret_cast<char *>(db_record[i].m_buf() + offset1), 
 			  num_bytes1);
-	bin_buf2.InsertAt(0, (char *)(ob.db_record[i].m_buf()+offset2), 
+	bin_buf2.InsertAt(0, reinterpret_cast<char *>(ob.db_record[i].m_buf() + offset2), 
 			  num_bytes2);
 
 	if(find_match) { // Search for matching byte pattern
@@ -1734,8 +1697,8 @@ gxDatabaseError gxrdDatabaseRecord::CreateRecord(const gxString &def, int clear_
 
   // Parse the record definition
   char words[MAXWORDS][MAXWORDLENGTH];
-  int num_words, parse_err;
-  parse_err = parse(def.c_str(), words, &num_words, ',');
+  int num_words;
+  int parse_err = parse(def.c_str(), words, &num_words, ',');
   if(parse_err != 0) {
     if(clear_rec) Clear();
     return gxDBASE_BAD_RECORD_DEF;
@@ -1753,25 +1716,22 @@ gxDatabaseError gxrdDatabaseRecord::CreateRecord(const gxString &def, int clear_
     if(clear_rec) Clear();
     return gxDBASE_BAD_RECORD_DEF;
   }
-  
-  gxString sbuf;
+
   gxString array_len;
-  gxString field_type;
-  int found_field_type;
-  int i, j;
+  int j;
   __ULWORD__ size = 0;
   __ULWORD__ overhead = 0;
   
   num_fields = num_words - 1;
 
-  for(i = 1; i < num_words; i++) {
+  for(int i = 1; i < num_words; i++) {
     if(*words[i]) {
       array_len.Clear(); // Clear the attribute string
-      found_field_type = 0;
-      sbuf = words[i];
+      int found_field_type = 0;
+      gxString sbuf = words[i];
       sbuf.TrimLeadingSpaces();
       sbuf.TrimTrailingSpaces();
-      field_type = sbuf;
+      gxString field_type = sbuf;
       if(field_type.Find("[") != -1) {
 	array_len = sbuf;
 	array_len.DeleteBeforeIncluding("[");
@@ -1792,11 +1752,11 @@ gxDatabaseError gxrdDatabaseRecord::CreateRecord(const gxString &def, int clear_
 	return gxDBASE_BAD_FIELD_TYPE;
       }
 
-      gxrdFIELD_TYPES type = (gxrdFIELD_TYPES)j;
+      gxrdFIELD_TYPES type = static_cast<gxrdFIELD_TYPES>(j);
       GetRecordTypeSize(type, size, overhead);
 
       // Set the number of bytes allocated for this data type
-      gxUINT32 num_bytes = (gxUINT32)0;
+      gxUINT32 num_bytes = static_cast<gxUINT32>(0);
 
       if(!array_len.is_null()) {
 	num_bytes = (size * array_len.Atoi());
@@ -1830,8 +1790,7 @@ gxDatabaseError gxrdDatabaseRecord::CreateRecord(const gxString &def, int clear_
   return gxDBASE_NO_ERROR;
 }
 
-gxDatabaseError gxrdDatabaseRecord::CreateDiskRecord(MemoryBuffer &disk_record)
-{
+gxDatabaseError gxrdDatabaseRecord::CreateDiskRecord(MemoryBuffer &disk_record) const {
   if(!db_record) return gxDBASE_NULL_PTR;
 
   // Record header stored with each record
@@ -1856,10 +1815,9 @@ gxDatabaseError gxrdDatabaseRecord::CreateDiskRecord(MemoryBuffer &disk_record)
   gxUINT32 num_bytes;
   __ULWORD__ field_len = 0;
   __ULWORD__ buf_offset = rh.SizeOf(); // Set the buffer offset
-  __ULWORD__ rec_offset = 0;
 
   for(__ULWORD__ i = 0; i < num_fields; i++) {
-    rec_offset = 0; // Reset the record offset
+    __ULWORD__ rec_offset = 0; // Reset the record offset
     memmove(&field_type_id, (db_record[i].m_buf()+rec_offset),
 	    sizeof(field_type_id));
     rec_offset += sizeof(field_type_id);
@@ -1873,14 +1831,14 @@ gxDatabaseError gxrdDatabaseRecord::CreateDiskRecord(MemoryBuffer &disk_record)
 
     // Check for exclude fields
     if(exclude_fields.Exclude(i)) {
-      num_bytes = (gxUINT32)0;
+      num_bytes = static_cast<gxUINT32>(0);
     }
     
     memmove((disk_record.m_buf()+buf_offset), &num_bytes, sizeof(num_bytes));
     buf_offset += sizeof(num_bytes);
 
     // Ensure that at least one byte has been allocated
-    if(num_bytes == (gxUINT32)0) continue;
+    if(num_bytes == static_cast<gxUINT32>(0)) continue;
 
     // Test the record length to ensure that size of the record
     // stored in memory is not larger than the original record size.
@@ -1899,8 +1857,7 @@ gxDatabaseError gxrdDatabaseRecord::CreateDiskRecord(MemoryBuffer &disk_record)
 }
 
 gxDatabaseError gxrdDatabaseRecord::LoadDiskRecord(\
-					   const MemoryBuffer &disk_record)
-{
+					   const MemoryBuffer &disk_record) const {
   if(!db_record) return gxDBASE_NULL_PTR;
 
   // Record header stored with each record
@@ -1915,9 +1872,7 @@ gxDatabaseError gxrdDatabaseRecord::LoadDiskRecord(\
   char field_type_id;
   gxUINT32 num_bytes;
   __ULWORD__ byte_count = rh.SizeOf();
-  __ULWORD__ field_len = 0;
   __ULWORD__ buf_offset = rh.SizeOf(); // Set the buffer offset
-  __ULWORD__ rec_offset = 0;
 
   for(__ULWORD__ i = 0; i < rh.num_fields; i++) {
     byte_count += sizeof(field_type_id);
@@ -1939,19 +1894,19 @@ gxDatabaseError gxrdDatabaseRecord::LoadDiskRecord(\
     // stored on disk is not larger than the in-memory copy. If so
     // resize the in-memory copy to hold the field type and length
     // variables.
-    field_len = (sizeof(field_type_id) + sizeof(num_bytes));
+    __ULWORD__ field_len = (sizeof(field_type_id) + sizeof(num_bytes));
     if(db_record[i].length() < field_len) {
       db_record[i].resize(field_len);
     }
 
-    rec_offset = 0; // Reset the record offset
+    __ULWORD__ rec_offset = 0; // Reset the record offset
     memmove((db_record[i].m_buf()+rec_offset), &field_type_id, 
 	    sizeof(field_type_id));
     rec_offset += sizeof(field_type_id);
 
     // Check for exclude fields
     if(exclude_fields.Exclude(i)) {
-      num_bytes = (gxUINT32)0;
+      num_bytes = static_cast<gxUINT32>(0);
     }
 
     memmove((db_record[i].m_buf()+rec_offset), &num_bytes, 
@@ -1966,7 +1921,7 @@ gxDatabaseError gxrdDatabaseRecord::LoadDiskRecord(\
     }
 
     // Ensure that at least one byte has been allocated
-    if(num_bytes == (gxUINT32)0) continue;
+    if(num_bytes == static_cast<gxUINT32>(0)) continue;
 
     // Test the record length to ensure that size of the record
     // stored on disk is not larger than the in-memory copy. If so
@@ -1983,17 +1938,16 @@ gxDatabaseError gxrdDatabaseRecord::LoadDiskRecord(\
   return gxDBASE_NO_ERROR;
 }
 
-int gxrdExcludeFields::Exclude(gxUINT32 field)
+int gxrdExcludeFields::Exclude(const gxUINT32 &field) const
 // Function used to check for fields to exclude from 
 // a table. Returns true if the field is to be excluded.
 // NOTE: The field variable represents a zero-based field 
 // number.  
 {
   int exclude = 0;
-  int i;
 
-  if((num_fields > (gxUINT32)0) && (fields)) {
-    for(i = 0; i < num_fields; i++) {
+  if((num_fields > static_cast<gxUINT32>(0)) && (fields)) {
+    for(int i = 0; i < num_fields; i++) {
       if(fields[i] == field) {
 	exclude = 1;
 	break;
@@ -2007,7 +1961,7 @@ void gxrdExcludeFields::SetNumFields(gxUINT32 nfields)
 {
   if(nfields < tableMIN_FIELDS) nfields = tableMIN_FIELDS;
   if(nfields > tableMAX_FIELDS) nfields = tableMAX_FIELDS;
-  if(fields) delete fields;
+  delete fields;
   num_fields = nfields;
   fields = new gxUINT32[num_fields];
   if(!fields) {
@@ -2016,26 +1970,25 @@ void gxrdExcludeFields::SetNumFields(gxUINT32 nfields)
   }
   for(int i = 0; i < num_fields; i++) {
     // Reset all the field numbers to a default value
-    fields[i] = (gxUINT32)0xffffffff;
+    fields[i] = static_cast<gxUINT32>(0xffffffff);
   }
 }
 
 void gxrdExcludeFields::Clear() 
 {
-  if(fields) delete[] fields;
-  fields = 0; 
+	delete[] fields;
+  fields = nullptr; 
   num_fields = 0;
 }
 
-__ULWORD__ gxrdExcludeFields::SizeOf() 
-{
+__ULWORD__ gxrdExcludeFields::SizeOf() const {
   __ULWORD__ len = sizeof(num_fields);
-  return (len + __ULWORD__(sizeof(num_fields)*num_fields));
+  return (len + static_cast<__ULWORD__>(sizeof(num_fields) * num_fields));
 }
 
 void gxrdExcludeFields::Copy(const gxrdExcludeFields &ob) 
 {
-  if(fields) delete[] fields;
+	delete[] fields;
   num_fields = ob.num_fields;
   if(ob.fields) {
     fields = new gxUINT32[num_fields];
@@ -2045,7 +1998,7 @@ void gxrdExcludeFields::Copy(const gxrdExcludeFields &ob)
 
 GXDLCODE_API const char *gxrdFieldTypeString(gxrdFIELD_TYPES t)
 {
-  int error = (int)t;
+  int error = static_cast<int>(t);
   if(error > (gxrdNUM_FIELD_TYPES-1)) error = gxrdINVALID_TYPE;
   return gxrdFIELD_TYPES_STRINGS[error];
 }

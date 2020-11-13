@@ -45,11 +45,9 @@ than, 0 equal to, 1 greater than.
 ==============================================================
 */
 // ----------------------------------------------------------- //   
-#ifndef __GX_DATABASE_KEY_HPP__
-#define __GX_DATABASE_KEY_HPP__
+#pragma once
 
 #include "gxdlcode.h"
-
 #include "keytypes.h"
 
 class GXDLCODE_API DatabaseKeyB
@@ -63,9 +61,11 @@ protected:
     db_key = ob.db_key;
     right_child = ob.right_child;
   }
-  DatabaseKeyB& operator=(const DatabaseKeyB &ob) { 
-    db_key = ob.db_key;
-    right_child = ob.right_child;
+  DatabaseKeyB& operator=(const DatabaseKeyB &ob) {
+  	if(&ob != this) {
+	    db_key = ob.db_key;
+	    right_child = ob.right_child;
+  	}
     return *this; 
   }
 
@@ -87,9 +87,3 @@ public: // Persistent data members
   // PC-lint 05/24/2002: The derived class must free memory
   // if heap space is used for the db_key pointer.
 };
-
-#endif // __GX_DATABASE_KEY_HPP__
-// ----------------------------------------------------------- // 
-// ------------------------------- //
-// --------- End of File --------- //
-// ------------------------------- //

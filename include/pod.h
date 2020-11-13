@@ -51,8 +51,7 @@ POD database or the data and index files individually.
 ==============================================================
 */
 // ----------------------------------------------------------- //   
-#ifndef __GX_POD_HPP__
-#define __GX_POD_HPP__
+#pragma once
 
 #include "gxdlcode.h"
 
@@ -69,12 +68,11 @@ const BtreeSize_t POD_DEFAULT_KEY_SIZE = 64;   // Default key size
 struct GXDLCODE_API PODIndexFile_t
 {
   PODIndexFile_t() { 
-    btree = 0;
+    btree = nullptr;
     dbkey_size = POD_DEFAULT_KEY_SIZE;
     order = POD_DEFAULT_ORDER;
     use_index = rebuild_index = 0;
   }
-  ~PODIndexFile_t() { }
 
   gxBtree *btree;         // Pointer to the open index file
   BtreeSize_t dbkey_size; // Size of the entry key used by this index
@@ -111,29 +109,28 @@ class GXDLCODE_API POD
 public:
   POD();
   ~POD();
+	
+  POD(const POD &) = delete;			// Disallow copying
+  POD& operator=(const POD &) = delete; // Disallow assignment
   
-private:
-  POD(const POD &ob) { }            // Disallow copying
-  void operator=(const POD &ob) { } // Disallow assignment
-
 public: // POD database functions
   gxDatabaseError Open(const char *dfname, const char *ifname,
 		       DatabaseKeyB &key_type,
 		       BtreeNodeOrder_t order = POD_DEFAULT_ORDER,
 		       gxDatabaseAccessMode mode = gxDBASE_READWRITE,
-		       int use_index = 1, FAU_t static_size = (FAU_t)0, 
+		       int use_index = 1, FAU_t static_size = static_cast<FAU_t>(0), 
 		       int num_trees = 1, 
 		       __SBYTE__ df_rev_letter = gxDatabaseRevisionLetter,
 		       __SBYTE__ if_rev_letter = gxDatabaseRevisionLetter);
   gxDatabaseError Open(const char *dfname, PODIndexFile *ix_ptr,
 		       gxDatabaseAccessMode mode = gxDBASE_READWRITE,
-		       FAU_t static_size = (FAU_t)0,
+		       FAU_t static_size = static_cast<FAU_t>(0),
 		        __SBYTE__ df_rev_letter = gxDatabaseRevisionLetter);
   gxDatabaseError Open(const char *dfname, char *ifname[POD_MAX_INDEX],
 		       unsigned num_indexes, DatabaseKeyB &key_type,
 		       BtreeNodeOrder_t order = POD_DEFAULT_ORDER,
 		       gxDatabaseAccessMode mode = gxDBASE_READWRITE,
-		       FAU_t static_size = (FAU_t)0, int num_trees = 1,
+		       FAU_t static_size = static_cast<FAU_t>(0), int num_trees = 1,
 		       __SBYTE__ df_rev_letter = gxDatabaseRevisionLetter,
 		       __SBYTE__ if_rev_letter = gxDatabaseRevisionLetter);
   gxDatabaseError Close();
@@ -147,14 +144,14 @@ public: // POD data file functions
   gxDatabaseError CloseDataFile();
   void ReleaseDataFile();
   gxDatabaseError CreateDataFile(const char *fname,
-				 FAU_t static_size = (FAU_t)0,
+				 FAU_t static_size = static_cast<FAU_t>(0),
 			 __SBYTE__ rev_letter = gxDatabaseRevisionLetter);
   gxDatabase *OpenDataFile() { return opendatafile; }
   gxDatabase *OpenDataFile() const { return opendatafile; }
   int Exists() const { return exists == 1; }
   int Exists() { return exists == 1; }
-  gxDatabaseError FlushDataFile();
-  int TestDataFile();
+  gxDatabaseError FlushDataFile() const;
+  int TestDataFile() const;
 
 public: // POD index file functions
   gxDatabaseError OpenIndex(const char *fname, unsigned index_number,
@@ -192,12 +189,12 @@ public: // POD index file functions
 public: // Execption handling functions
   gxDatabaseError GetDataFileError();
   gxDatabaseError GetDataFileError() const;
-  gxDatabaseError SetDataFileError(gxDatabaseError err);
+  gxDatabaseError SetDataFileError(gxDatabaseError err) const;
   gxDatabaseError GetIndexFileError(unsigned index_number = 0);
   gxDatabaseError GetIndexFileError(unsigned index_number = 0) const;
   gxDatabaseError SetIndexFileError(gxDatabaseError err,
 				    unsigned index_number = 0);
-  const char *DataFileExceptionMessage();
+  const char *DataFileExceptionMessage() const;
   const char *IndexFileExceptionMessage(unsigned index_number = 0);
 
 private:
@@ -206,9 +203,3 @@ private:
   int exists;                  // True if data file already exists
   int using_index;             // True if using the indexing sub-system
 };
-
-#endif // __GX_POD_HPP__
-// ----------------------------------------------------------- // 
-// ------------------------------- //
-// --------- End of File --------- //
-// ------------------------------- //

@@ -48,15 +48,6 @@
     <ClCompile Include="..\src\dfileb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\eds101.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\eds201.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\edscfg.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\ehandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -210,9 +201,6 @@
     <ClCompile Include="..\src\htmldrv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\httpgrab.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\leaktest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -235,9 +223,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\scomserv.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\sreg101.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\stdafx.cpp">

@@ -30,9 +30,6 @@
     <ClCompile Include="..\src\dbugmgr.cpp" />
     <ClCompile Include="..\src\devcache.cpp" />
     <ClCompile Include="..\src\dfileb.cpp" />
-    <ClCompile Include="..\src\eds101.cpp" />
-    <ClCompile Include="..\src\eds201.cpp" />
-    <ClCompile Include="..\src\edscfg.cpp" />
     <ClCompile Include="..\src\ehandler.cpp" />
     <ClCompile Include="..\src\fstring.cpp" />
     <ClCompile Include="..\src\futils.cpp" />
@@ -84,7 +81,6 @@
     <ClCompile Include="..\src\gxuint32.cpp" />
     <ClCompile Include="..\src\gxuint64.cpp" />
     <ClCompile Include="..\src\htmldrv.cpp" />
-    <ClCompile Include="..\src\httpgrab.cpp" />
     <ClCompile Include="..\src\leaktest.cpp" />
     <ClCompile Include="..\src\logfile.cpp" />
     <ClCompile Include="..\src\memblock.cpp" />
@@ -93,7 +89,6 @@
     <ClCompile Include="..\src\pod.cpp" />
     <ClCompile Include="..\src\pscript.cpp" />
     <ClCompile Include="..\src\scomserv.cpp" />
-    <ClCompile Include="..\src\sreg101.cpp" />
     <ClCompile Include="..\src\stdafx.cpp" />
     <ClCompile Include="..\src\strutil.cpp" />
     <ClCompile Include="..\src\systime.cpp" />

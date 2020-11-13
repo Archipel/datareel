@@ -30,3 +30,7 @@
 
 # Debug file
 core.*
+
+/Datareel/Datareel.vcxproj.user
+/Datareel/Debug
+/Datareel/Release

@@ -137,12 +137,13 @@ const char *gxDatabase::DatabaseExceptionMessage() const
 }
 
 gxDatabaseError gxDatabase::Create(gxdFPTR *fp, FAU_t staticSize, __SBYTE__ revisionLetter) {
-	this->fp = fp;
 
 	// Close any open files 
 	if (Close() != gxDBASE_NO_ERROR) {
 		return gxd_error;
 	}
+	
+	this->fp = fp;
 
 	if (fp == nullptr) {
 		is_ok = 0;
